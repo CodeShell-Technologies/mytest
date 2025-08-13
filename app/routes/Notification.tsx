@@ -1,0 +1,211 @@
+
+
+
+import {
+  Bell,
+  Dot,
+  Eye,
+  KeyRound,
+  Trash2,
+  User2,
+  Calendar,
+} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import MilestoneRemindar from "./Notification/MilestoneRemindar";
+import TaskRemindar from "./Notification/TaskRemindar";
+import PaymentRemaindar from "./Notification/PaymentRemaindar";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import axios from "axios";
+import { BASE_URL } from "~/constants/api";
+import { useAuthStore } from "src/stores/authStore";
+import { Link } from "react-router";
+
+interface Project {
+  project_code: string;
+  title: string;
+  priority: string;
+  type: string; 
+  start_date: string;
+  end_date: string;
+  status: string;
+  handler_by: string;
+}
+
+function Notification() {
+  const [activeTab, setActiveTab] = useState("projectover");
+  const [overdueProjects, setOverdueProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const token = useAuthStore((state) => state.accessToken);
+  
+  const tabs = [
+    { id: "projectover", label: "Project" },
+    { id: "milestone", label: "Milestone" },
+    { id: "task", label: "Task" },
+    { id: "payment", label: "Payment" },
+  ];
+
+  useEffect(() => {
+    fetchOverdueProjects();
+  }, [selectedDate]);
+
+  const fetchOverdueProjects = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      const response = await axios.get(
+        `${BASE_URL}/project/overview/read?overdue=${formattedDate}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      if (response.data.message === "View Project Overview Info Success") {
+        setOverdueProjects(response.data.data);
+      } else {
+        setError("Failed to fetch overdue projects");
+      }
+    } catch (err) {
+      setError("Error fetching overdue projects");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getTypeColor = (priority: string) => {
+    return priority === 'minor' ? 'blue' : 'red';
+  };
+
+  return (
+    <>
+      <div className="dark:border-gray-700 mt-10 mb-10">
+        <nav className="flex justify-evenly -mb-px">
+          {tabs.map((tab, index) => (
+            <>
+              {index > 0 && (
+                <span className="bg-gray-300 dark:bg-red-700 w-[50px] h-[2px] mt-5 items-center"></span>
+              )}
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`font-medium text-sm ${
+                  activeTab === tab.id
+                    ? "text-gray-200 dark:bg-gray-800 dark:text-red-800 hover:border-gray-300 bg-red-700 w-[120px] h-[40px] rounded-sm"
+                    : "border-transparent text-gray-700 hover:text-red-700 dark:bg-gray-600 dark:text-gray-100 hover:border-gray-300 bg-gray-200 w-[120px] h-[40px] rounded-sm"
+                }`}
+              >
+                {tab.label}
+              </button>
+            </>
+          ))}
+        </nav>
+      </div>
+
+      {activeTab === 'projectover' && (
+        <div className="p-10">
+          <div className="flex justify-between items-center mb-10">
+            <div className="text-gray-500 text-xl font-bold">Project Reminder</div>
+            <div className="flex items-center gap-2">
+              <Calendar className="text-gray-500" size={20} />
+              <DatePicker
+                selected={selectedDate}
+                onChange={(date: Date) => setSelectedDate(date)}
+                dateFormat="yyyy-MM-dd"
+                className="border rounded p-2"
+              />
+            </div>
+          </div>
+          
+          {loading && <div className="text-center py-4">Loading overdue projects...</div>}
+          {error && <div className="text-red-500 text-center py-4">{error}</div>}
+          
+          <div className="w-full flex flex-col justify-evenly gap-8">
+            {overdueProjects.length === 0 && !loading && (
+              <div className="text-center py-4 text-gray-500">
+                No overdue projects found for {selectedDate.toDateString()}
+              </div>
+            )}
+
+            {overdueProjects.map((project) => {
+              const typeColor = getTypeColor(project.type);
+              const bgColor = typeColor === 'blue' ? 'bg-blue-700' : 'bg-red-700';
+              const textColor = typeColor === 'blue' ? 'text-blue-700' : 'text-red-700';
+              const hoverBgColor = typeColor === 'blue' ? 'hover:bg-blue-700/50' : 'hover:bg-red-700/50';
+              const hoverTextColor = typeColor === 'blue' ? 'hover:text-blue-800' : 'hover:text-red-800';
+
+              return (
+                <div key={project.project_code} className="bg-white w-full h-[100%] flex rounded-sm shadow-lg">
+                  <div>
+                    <div className={`${bgColor} rounded-r-lg w-4 h-[195px]`}></div>
+                  </div>
+                  <div className="ms-4 w-full p-4">
+                    <div className="md:flex gap-5">
+                      <User2 className="font-light text-gray-600" size={25} />
+                      <h1 className="text-xl font-medium text-gray-600">
+                        {project.project_code} - {project.title}
+                      </h1>
+                    </div>
+                    <div className="md:flex md:w-full justify-between mt-2">
+                      <div>
+                        <p className="text-gray-600">
+                          Type: {project.type} | Priority: {project.priority}
+                        </p>
+                        <p className="text-gray-600">
+                          Start: {formatDate(project.start_date)} | 
+                          Due: {formatDate(project.end_date)} | 
+                          Status: {project.status}
+                        </p>
+                        <p className="text-gray-600">
+                          Handler: {project.handler_by}
+                        </p>
+                      </div>
+                      <div className="md:flex flex-col">
+                        <div>
+                          <p className={`w-[120px] h-[30px] ${bgColor}/25 ${textColor} rounded-3xl`}>
+                            <Dot className="inline" /> Overdue
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="md:flex justify-between mt-4">
+                      <div className="flex gap-8">
+                        <Link to={`/project/${project.project_code}`}>
+                        <button className={`${bgColor}/25 px-3 py-2 rounded-sm ${textColor} ${hoverBgColor} ${hoverTextColor} flex gap-1`}>
+                          <Eye size={15} className="mt-1" />
+                          View Detail
+                        </button>
+                        </Link>
+                      
+                      </div>
+                      <div>
+                   
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'milestone' && <MilestoneRemindar />}
+      {activeTab === 'task' && <TaskRemindar />}
+      {activeTab === 'payment' && <PaymentRemaindar />}
+    </>
+  );
+}
+
+export default Notification;

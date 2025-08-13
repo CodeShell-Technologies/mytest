@@ -1,0 +1,212 @@
+@import "tailwindcss";
+/* @import "@schedule-x/theme-default/dist/index.css";
+@import "@schedule-x/theme-default/dist/index.css";
+@import "@syncfusion/ej2-base/styles/material.css";
+@import "@syncfusion/ej2-buttons/styles/material.css";
+@import "@syncfusion/ej2-calendars/styles/material.css";
+@import "@syncfusion/ej2-dropdowns/styles/material.css";
+@import "@syncfusion/ej2-inputs/styles/material.css";
+@import "@syncfusion/ej2-lists/styles/material.css";
+@import "@syncfusion/ej2-navigations/styles/material.css";
+@import "@syncfusion/ej2-popups/styles/material.css";
+@import "@syncfusion/ej2-splitbuttons/styles/material.css";
+@import "@syncfusion/ej2-react-schedule/styles/material.css"; */
+:root {
+  --color-primary: #b91c1c;
+  --color-secondary:#d1d5db;
+    --color-hover:#C62828;
+    --color-hover-secondary:#9ca3af;
+
+
+
+}
+:root{
+      --color-text-secondary:#9ca3af
+
+}
+@layer utilities {
+  .hover-effect {
+    @apply hover:scale-105 transition-transform duration-300;
+  }
+}
+
+
+@layer base {
+
+
+  .title {
+    @apply text-3xl font-semibold text-slate-900 transition-colors dark:text-slate-50;
+  }
+}
+
+.gradient-text {
+  background-size: 200% 200%;
+  background-image: linear-gradient(to right, #dc2626, #b7b9bc, #dc2626);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-animation: animatedgradient 3s ease infinite;
+  -moz-animation: animatedgradient 3s ease infinite;
+  animation: animatedgradient 3s ease infinite;
+}
+
+@keyframes gradient-shine {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-shine {
+  background-size: 200% 200%;
+  animation: gradient-shine 3s ease infinite;
+}
+
+.transition-transform {
+  transition-property: transform;
+}
+
+.transition-opacity {
+  transition-property: opacity;
+}
+
+.duration-300 {
+  transition-duration: 300ms;
+}
+
+@keyframes animatedgradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes animatergradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.scrollbar {
+  @apply [scrollbar-color:_#cbd5e1_transparent] dark:[scrollbar-color:_#334155_transparent];
+}
+
+/* Remove global scrollbar hiding */
+
+
+/* Thin scrollbar */
+::-webkit-scrollbar {
+  width: 6px;  /* Adjust this value to make it thinner/thicker */
+  height: 6px; /* For horizontal scrollbars */
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+  border-radius: 3px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; 
+  border-radius: 3px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af; 
+}
+
+/* Dark mode styles */
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+@layer base {
+  :root {
+    --color-custom-red: #ff1414;
+  }
+}
+
+@layer components {
+  .sidebar-group {
+    @apply flex w-full flex-col gap-y-2;
+  }
+
+  .sidebar-group-title {
+    @apply overflow-hidden text-ellipsis text-sm font-medium text-slate-600 dark:text-slate-400;
+  }
+
+  .sidebar-item {
+    @apply flex h-[40px] w-full flex-shrink-0 items-center gap-x-3 p-3 text-sm font-medium text-slate-500 transition-colors hover:bg-red-100 hover:text-red-800 dark:text-slate-400 dark:hover:bg-gray-700 dark:hover:text-slate-50;
+
+    &.active {
+      @apply bg-[var(--color-primary)] text-slate-50 dark:bg-red-800 dark:text-slate-50;
+    }
+
+    .title {
+      @apply text-3xl font-semibold text-slate-900 transition-colors dark:text-slate-50;
+    }
+
+    .btn-ghost {
+      @apply flex h-10 flex-shrink-0 items-center gap-x-3 rounded-lg p-2 text-red-400 transition-colors hover:bg-red-100 hover:text-slate-500 dark:hover:bg-red-800 dark:hover:text-slate-300;
+    }
+
+    .title {
+      @apply text-transparent bg-clip-text bg-gradient-to-b from-red-600 to-red-900;
+    }
+
+    .bg {
+      @apply bg-gradient-to-b from-red-600 to-red-900;
+    }
+  }
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+html,
+body {
+  @apply bg-white dark:bg-gray-950;
+
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark;
+  }
+}
+
+.title {
+  color: text-transparent;
+  background-image: linear-gradient(to right, #dc2626, #b7b9bc, #dc2626);
+  background-clip: text;
+}

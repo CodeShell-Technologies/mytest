@@ -1,0 +1,95 @@
+import "react-router";
+
+declare module "react-router" {
+  interface Register {
+    params: Params;
+  }
+}
+
+type Params = {
+  "/": {};
+  "/login": {};
+  "/": {};
+  "/branch": {};
+  "/branch/:id": {
+    "id": string;
+  };
+  "/employee": {};
+  "/employee/salary_slip": {};
+  "/employee/addpage/:id": {
+    "id": string;
+  };
+  "/employee/editpage/:id": {
+    "id": string;
+  };
+  "/leave": {};
+  "/time_sheet": {};
+  "/reportAnaysis": {};
+  "/attandance": {};
+  "/project": {};
+  "/project/:id": {
+    "id": string;
+  };
+  "/milestone/:id": {
+    "id": string;
+  };
+  "/campaignview/:id": {
+    "id": string;
+  };
+  "/task_view/:id": {
+    "id": string;
+  };
+  "/project_tasklist": {};
+  "/leads": {};
+  "/client": {};
+  "/client_add": {};
+  "/client_view": {};
+  "/campaign": {};
+  "/account_profile": {};
+  "/team": {};
+  "/teamview/:id": {
+    "id": string;
+  };
+  "/leadsview/:id": {
+    "id": string;
+  };
+  "/account": {};
+  "/report_analysis": {};
+  "/notification": {};
+  "/calendar": {};
+  "/mom_report": {};
+  "/active_log": {};
+  "/employee_profile/:id": {
+    "id": string;
+  };
+  "/member_view/:id": {
+    "id": string;
+  };
+  "/employee_report": {};
+  "/payreq_view/:id": {
+    "id": string;
+  };
+  "/invoice_view/:id": {
+    "id": string;
+  };
+  "/offer-letter-view/:id": {
+    "id": string;
+  };
+  "/employee/:id/joining-letter": {
+    "id": string;
+  };
+  "/View-certificate/:id/:resign_id": {
+    "id": string;
+    "resign_id": string;
+  };
+  "/settings": {};
+  "/settings/access-permission/roles": {};
+  "/settings/access-permission/user": {};
+  "/settings/access-permission/systemsetting": {};
+  "/settings/access-permission/teams": {};
+  "/settings/settings/invoice/tax": {};
+  "/settings/invoice/payment-methods": {};
+  "/*": {
+    "*": string;
+  };
+};
