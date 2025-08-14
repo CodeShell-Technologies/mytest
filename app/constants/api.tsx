@@ -1,4 +1,4 @@
-export const BASE_URL = "https://almino-testing.onrender.com";
+export const BASE_URL = "https://almino-testing.onrender.com/api";
 export const toastposition="bottom-right"
 export const toastStyle= {
           style: {
