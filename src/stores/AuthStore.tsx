@@ -6,6 +6,7 @@ export const useAuthStore = create(
   persist(
     (set) => ({
       accessToken: null,
+      testvariable:null,
       refreshToken: null,
       isActive: false,
       isLoggedIn: false,
@@ -23,6 +24,7 @@ export const useAuthStore = create(
           permissions: data.permissions,
           isLoggedIn: true,
           role: data.role,
+          testvariable:data.isActive,
         }),
       clearAuthData: () =>
         set({
