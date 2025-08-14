@@ -22,10 +22,19 @@ import {
 } from "lucide-react";
 import { ButtonLoader } from "src/component/Loaders/ButtonLoader";
 const departmentDesignations = {
+  
+admin: [
+    "Admin",
+    "CRM",
+    "Marketing-Executive",
+    
+  ],
+
   architecture: [
     "principal",
     "senior-Architect",
     "architect",
+    "visualizer",
     "junior-Architect",
     "architect-Trainee",
     "architect-Intern",
@@ -41,10 +50,10 @@ const departmentDesignations = {
   structural: [
     "principal",
     "senior-Structural",
-    "structural",
+    "structural-engineer",
     "junior-Structural",
-    "structural-Trainee",
-    "structural-Intern",
+    "structural-draftsman",
+    "structural-drafter",
   ],
   drafting: [
     "principal",
@@ -78,6 +87,15 @@ const departmentDesignations = {
     "site-Engineer-Trainee",
     "site-Engineer-Intern",
   ],
+
+  construction: [
+    "principal",
+    "senior-Site-Engineer",
+    "site-Engineer",
+    "junior-Site-Engineer",
+    "site-Engineer-Trainee",
+    "site-Engineer-Intern",
+  ],
 };
 
 const departmentOptions = [
@@ -88,6 +106,8 @@ const departmentOptions = [
   "hr",
   "sales",
   "consulting",
+  "admin",
+  "construction",
 ];
 
 function EmployeeForm({ onSuccess, onCancel }) {
