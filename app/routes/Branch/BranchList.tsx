@@ -215,7 +215,7 @@ const BranchList = () => {
         {
           data: (
             <div className="flex flex-wrap justify-center gap-2">
-              <Link to={`/branch/${branch.branchcode}`}>
+              <Link to={`/branch/${encodeURIComponent(branch.branchcode)}`}>
                 <button
                   className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
                   title="View"

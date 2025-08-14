@@ -89,7 +89,7 @@ console.log('useparammss',id)
       if (search) url += `&search=${search}`;
       if (status) url += `&status=${status}`;
       if (manager) url += `&manager_id=${manager}`;
-      if (branchCode) url += `&branchcode=${branchCode}`;
+      if (branchCode) url += `&branchcode=${encodeURIComponent(branchCode)}`;
       if (sort) url += `&dec=${sort}`;
 
       const response = await axios.get(url, {
