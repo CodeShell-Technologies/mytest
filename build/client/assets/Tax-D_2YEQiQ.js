@@ -1,1 +1,0 @@
-import{w as r}from"./with-props-DF0D9zIo.js";import{j as t}from"./chunk-AYJ5UCUI-nSEPIBkT.js";const s=()=>t.jsx(t.Fragment,{children:t.jsx("h1",{children:"settings Tax"})}),e=r(s);export{e as default};

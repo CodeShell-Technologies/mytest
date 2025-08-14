@@ -1,1 +1,0 @@
-import{w as e}from"./with-props-DF0D9zIo.js";import{j as t}from"./chunk-AYJ5UCUI-nSEPIBkT.js";const n=()=>t.jsx(t.Fragment,{children:t.jsx("h1",{children:"settings payment"})}),s=e(n);export{s as default};
