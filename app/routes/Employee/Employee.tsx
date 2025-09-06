@@ -474,6 +474,10 @@ const Employee = () => {
                     tbody={tbody}
                     responsive={true}
                     className="min-w-full"
+                    enableFilters={true}
+  enableSorting={true}
+  onRowDoubleClick={(row) => handleView(row.id)}
+
                   />
                 </div>
               </div>
@@ -521,6 +525,8 @@ const Employee = () => {
         className="w-full md:w-[600px]"
         onClose={() => setShowDeleteModal(false)}
         title="Delete Branch"
+closeOnOutsideClick={false}
+
       >
         {/* <div className="flex flex-col gap-6 ">
           <p className="text-gray-500 text-lg font-bold text-center">
@@ -659,6 +665,8 @@ const Employee = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Create New Employee"
+closeOnOutsideClick={false}
+        
       >
         <EmployeeForm
           onSuccess={handleCreateSuccess}

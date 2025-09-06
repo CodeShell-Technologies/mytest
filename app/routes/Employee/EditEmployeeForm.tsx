@@ -6,7 +6,7 @@ import { useNavigate, useParams } from "react-router";
 import { ButtonLoader } from "src/component/Loaders/ButtonLoader";
 import { useAuthStore } from "src/stores/authStore";
 import { BASE_URL, toastposition, toastStyle } from "~/constants/api";
-
+import { Eye, EyeOff } from "lucide-react";
 const EditEmployeeDetail = () => {
   const [activeTab, setActiveTab] = useState("personal");
   const token = useAuthStore((state) => state.accessToken);
@@ -17,7 +17,7 @@ const EditEmployeeDetail = () => {
   const [masterLanguages, setMasterLanguages] = useState([]);
   const [masterSoftware, setMasterSoftware] = useState([]);
   const branchcode = useAuthStore((state) => state.branchcode);
-
+   const [showPassword, setShowPassword] = useState(false);
   // State for all editable sections
   const [formData, setFormData] = useState({
     personal: {
@@ -41,6 +41,7 @@ const EditEmployeeDetail = () => {
       relivingdate: "",
       status: "active",
       notes: "",
+
     },
     education: [],
     employment: [],
@@ -718,6 +719,43 @@ const EditEmployeeDetail = () => {
                     className="max-w-[400px] w-[300px] bg-white dark:bg-gray-700 text-sm px-2 py-2 border border-gray-400 dark:border-gray-600 rounded"
                   />
                 </div>
+
+
+                         <div>
+  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+    Password
+  </label>
+  <input
+    type="password" // hide input
+    placeholder="Enter new password to change"
+    value={formData.personal.password || ""}
+    onChange={(e) => handlePersonalChange("password", e.target.value)}
+    className="max-w-[400px] w-[300px] bg-white dark:bg-gray-700 text-sm px-2 py-2 border border-gray-400 dark:border-gray-600 rounded"
+  />
+</div>
+      
+
+             {/*   <div className="relative max-w-[400px]">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        Password
+      </label>
+      <input
+        type={showPassword ? "text" : "password"}
+        placeholder="Enter new password to change"
+        value={formData.personal.password || ""}
+        onChange={(e) => handlePersonalChange("password", e.target.value)}
+        className="w-full bg-white dark:bg-gray-700 text-sm px-2 py-2 border border-gray-400 dark:border-gray-600 rounded pr-10"
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300"
+      >
+        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </div>
+*/}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Department

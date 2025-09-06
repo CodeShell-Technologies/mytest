@@ -6,6 +6,11 @@ import { useSideBar } from "~/store/useSideBar";
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "src/stores/authStore";
+import { BASE_URL } from "~/constants/api";
+// import { useAuthStore } from "src/stores/authStore";
+
+import axios from "axios";
+import { Bell } from "lucide-react";
 
 export const Header = () => {
   const { isOpen, toggle } = useSideBar();
@@ -14,6 +19,12 @@ export const Header = () => {
   const navigate = useNavigate();
   const clearAuthData = useAuthStore((state) => state.clearAuthData);
   const UserRole=useAuthStore((state=>state.role))
+  const [count, setCount] = useState(0);
+  const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+
+  const token = useAuthStore((state: any) => state.accessToken);
+
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -26,9 +37,75 @@ export const Header = () => {
     };
   }, []);
 
+  useEffect(() => {
+  const fetchCounts = async () => {
+    try {
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+
+      const [projects, tasks, milestones] = await Promise.all([
+        axios.get(
+          `${BASE_URL}/project/overview/read?overdue=${today}`,
+          { headers }
+        ),
+        axios.get(
+          `${BASE_URL}/project/task/read?overdue=${today}`,
+          { headers }
+        ),
+        axios.get(
+          `${BASE_URL}/project/milestone/read?overdue=${today}`,
+          { headers }
+        ),
+      ]);
+
+      console.log("Projects API:", projects.data);
+      console.log("Tasks API:", tasks.data);
+      console.log("Milestones API:", milestones.data);
+
+      const projectCount =
+        projects.data.totalDocuments ?? projects.data.total ?? 0;
+      const taskCount =
+        tasks.data.totalDocuments ?? tasks.data.total ?? 0;
+      const milestoneCount =
+        milestones.data.totalDocuments ?? milestones.data.total ?? 0;
+
+      const total = projectCount + taskCount + milestoneCount;
+      setCount(total);
+    } catch (error) {
+      console.error("Failed to fetch reminder counts", error);
+    }
+  };
+
+  fetchCounts();
+}, [today, token]);
+
+useEffect(() => {
+  const fetchCounts = async () => { /* ...same as above... */ };
+  fetchCounts();
+  const interval = setInterval(fetchCounts, 60000); // refresh every 60s
+  return () => clearInterval(interval);
+}, [today]);
+
+
+
   const handleLogout = () => {
-    clearAuthData();
-    navigate("/login");
+  //   clearAuthData();
+  //   useAuthStore.persist.clearStorage(); // clear Zustand persist key
+  // useAuthStore.getState().clearAuthData(); // reset Zustand state
+  //   navigate("/login");
+    const clearAuthData = useAuthStore.getState().clearAuthData;
+  clearAuthData(); // clears Zustand state and persisted storage
+
+  // Extra safety: clear tokens manually
+  localStorage.removeItem("auth-storage"); // Zustand persist key
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("role");
+  localStorage.removeItem("brcode");
+
+  window.location.href = "/login"; // force reload to login page
   };
 
   return (
@@ -43,10 +120,14 @@ export const Header = () => {
       </div>
 
       <div className="flex items-center gap-x-6">
-        <IoIosMailUnread 
-          className="text-gray-500 hover:text-red-700 dark:text-gray-400 dark:hover:text-red-500 cursor-pointer" 
-          size={25} 
-        />
+        <div className="relative inline-block">
+      <Bell  onClick={() => navigate("/notification")} className="text-gray-600 hover:text-red-700 dark:text-gray-400 dark:hover:text-red-500 cursor-pointer" size={28} />
+      {count > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">
+          {count}
+        </span>
+      )}
+    </div>
 
         <div className="relative" ref={dropdownRef}>
           <div 

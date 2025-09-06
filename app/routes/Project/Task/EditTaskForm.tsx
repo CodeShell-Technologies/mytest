@@ -21,7 +21,7 @@ import useProjectStore from "src/stores/ProjectStore";
 import useBranchStore from "src/stores/useBranchStore";
 import useEmployeeStore from "src/stores/useEmployeeStore";
 import { BASE_URL } from "~/constants/api";
-
+import AsyncSelect from "react-select/async";
 const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
   console.log("taskkidin tssk", taskData?.task_id);
   console.log("taskkidin tssk details", taskData);
@@ -29,6 +29,16 @@ const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const taskId = taskData.task_id;
   const [fetching, setFetching] = useState(true);
+  
+  const staff_ids = useAuthStore((state) => state.staff_id);
+  const [department, setDepartment] = useState<string | null>(null);
+  const [staffOptions, setStaffOptions] = useState<any[]>([]);
+  const [isFetchingStaff, setIsFetchingStaff] = useState(false);
+  const [employeeOptions, setEmployeeOptions] = useState<{ value: string; label: string }[]>([]);
+
+  const [projectOptions, setProjectOptions] = useState([]);
+  const [milestoneOptions, setMilestoneOptions] = useState([]);
+ 
   const clientcodeOptions = useClientStore((state) => state.clientscodeOptions);
   const [error, setError] = useState(null);
   const allProjectcodeOptions = useProjectStore(
@@ -172,6 +182,212 @@ const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
       setLoading(false);
     }
   };
+
+
+   useEffect(() => {
+    if (!formData.branchcode) {
+      setEmployeeOptions([]);
+      return;
+    }
+
+    async function fetchEmployees() {
+      try {
+        const res = await fetch(
+          `${BASE_URL}/getStaffbranch?branchcode=${encodeURIComponent(formData.branchcode)}`
+        );
+        const data = await res.json();
+
+        if (data?.status && Array.isArray(data.data)) {
+          const options = data.data.map((emp: Employee) => ({
+            value: emp.staff_id,
+            label: `${emp.firstname} ${emp.lastname} (${emp.designation})`,
+          }));
+          setEmployeeOptions(options);
+        } else {
+          setEmployeeOptions([]);
+        }
+      } catch (err) {
+        console.error("Error fetching employees:", err);
+        setEmployeeOptions([]);
+      }
+    }
+
+    fetchEmployees();
+  }, [formData.branchcode]); // 🔑 re-fetch whenever branch changes
+
+
+   useEffect(() => {
+    if (formData.branchcode) {
+      // fetchTeams(formData.branchcode);
+      fetchProjects(formData.branchcode);
+    } else {
+      // setTeamOptions([]);
+      // setTeamMembers([]);
+      setProjectOptions([]);
+      setMilestoneOptions([]);
+    }
+  }, [formData.branchcode]);
+
+  // Fetch milestones when project_code changes
+  useEffect(() => {
+    if (formData.project_code) {
+      fetchMilestones(formData.project_code);
+    } else {
+      setMilestoneOptions([]);
+    }
+  }, [formData.project_code]);
+
+  // Fetch team members when team_id changes
+  // useEffect(() => {
+  //   if (formData.team_id) {
+  //     fetchTeamMembers(formData.team_id);
+  //   } else {
+  //     // setTeamMembers([]);
+  //   }
+  // }, [formData.team_id]);
+
+  // const fetchTeams = async (branchcode) => {
+  //   try {
+  //     const response = await axios.get(
+  //       `${BASE_URL}/teams/read?branchcode=${branchcode}`,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       }
+  //     );
+
+  //     if (response.data && response.data.data) {
+  //       const options = response.data.data.map((team) => ({
+  //         value: team.team_id,
+  //         label: team.team_name,
+  //         team_lead: team.team_lead,
+  //       }));
+  //       setTeamOptions(options);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error fetching teams:", err);
+  //     toast.error("Failed to load teams");
+  //   }
+  // };
+
+  const fetchProjects = async (branchcode) => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/project/overview/dropdown?branchcode=${branchcode}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data && response.data.data) {
+        const options = response.data.data.map((project) => ({
+          value: project.project_code,
+          label: project.title,
+        }));
+        setProjectOptions(options);
+      }
+    } catch (err) {
+      console.error("Error fetching projects:", err);
+      toast.error("Failed to load projects");
+    }
+  };
+
+  const fetchMilestones = async (project_code) => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/project/milestone/dropdown?project_code=${project_code}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data && response.data.data) {
+        const options = response.data.data.map((milestone) => ({
+          value: milestone.milestone_code,
+          label: milestone.miles_title,
+        }));
+        setMilestoneOptions(options);
+      }
+    } catch (err) {
+      console.error("Error fetching milestones:", err);
+      toast.error("Failed to load milestones");
+    }
+  };
+
+  // const fetchTeamMembers = async (teamId) => {
+  //   try {
+  //     const response = await axios.get(
+  //       `${BASE_URL}/teams/read/profile?team_id=${teamId}`,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       }
+  //     );
+
+  //     if (response.data && response.data.data) {
+  //       // Filter out team leads (role === "lead")
+  //       const members = response.data.data.members.filter(
+  //         (member) => member.role !== "lead"
+  //       );
+  //       setTeamMembers(members);
+
+  //       // Auto-set handler_by to the team lead
+  //       const teamLead = response.data.data.members.find(
+  //         (member) => member.role === "lead"
+  //       );
+  //       if (teamLead) {
+  //         setFormData((prev) => ({
+  //           ...prev,
+  //           handler_by: teamLead.staff_id,
+  //         }));
+  //       }
+  //     }
+  //   } catch (err) {
+  //     console.error("Error fetching team members:", err);
+  //     toast.error("Failed to load team members");
+  //   }
+  // };
+
+
+
+   const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = employeeOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+// const loadTeams = (inputValue: string, callback: (options: Option[]) => void) => {
+//     const filtered = teamOptions.filter((c) =>
+//       c.label.toLowerCase().includes(inputValue.toLowerCase())
+//     );
+//     callback(filtered);
+//   };
+
+
+    const loadProjects = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = projectOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+      const loadMilestones = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = milestoneOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+        const loadBranches = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = branchCodeOption.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+
+
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
       {error && (
@@ -189,7 +405,7 @@ const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Hash className="inline mr-1" size={14} /> Branch Code
             </p>
-            <select
+{/*            <select
               name="branchcode"
               value={formData.branchcode}
               onChange={handleChange}
@@ -202,14 +418,36 @@ const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+              <AsyncSelect
+          cacheOptions
+          defaultOptions={branchCodeOption}
+          name="branchcode"
+          loadOptions={loadBranches}
+       onChange={(selected: Option | null) =>
+    setFormData((prev) => ({
+      ...prev,
+      branchcode: selected ? selected.value : "",
+    }))
+  }
+    value={
+    branchCodeOption.find((opt) => opt.value === formData.branchcode) || null
+  }
+          // isDisabled={!formData.department || staffOptions.length === 0}
+          placeholder="Select or search branch"
+        />
+
+
+
+
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Network className="inline mr-1" size={14} /> Related Project
             </p>
-            <select
+            {/*<select
               name="project_code"
               value={formData.project_code}
               onChange={handleChange}
@@ -222,14 +460,34 @@ const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+                           <AsyncSelect
+          cacheOptions
+          defaultOptions={projectOptions}
+          name="project_code"
+          loadOptions={loadProjects}
+       onChange={(selected: Option | null) =>
+    setFormData((prev) => ({
+      ...prev,
+      project_code: selected ? selected.value : "",
+    }))
+  }
+    value={
+    projectOptions.find((opt) => opt.value === formData.project_code) || null
+  }
+          // isDisabled={!formData.department || staffOptions.length === 0}
+          placeholder="Select or search project"
+        />
+
+
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Milestone className="inline mr-1" size={14} /> Select Milestone
             </p>
-            <select
+           {/* <select
               name="milestone_code"
               value={formData.milestone_code}
               onChange={handleChange}
@@ -242,7 +500,25 @@ const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+                                         <AsyncSelect
+          cacheOptions
+          defaultOptions={milestoneOptions}
+          name="milestone_code"
+          loadOptions={loadMilestones}
+       onChange={(selected: Option | null) =>
+    setFormData((prev) => ({
+      ...prev,
+      milestone_code: selected ? selected.value : "",
+    }))
+  }
+    value={
+    milestoneOptions.find((opt) => opt.value === formData.milestone_code) || null
+  }
+          // isDisabled={!formData.department || staffOptions.length === 0}
+          placeholder="Select or search milestone"
+        />
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
@@ -331,21 +607,59 @@ const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             <User className="inline mr-1" size={14} /> Handle By
           </p>
-          <select
+          {/*<select
             name="handler_by"
             value={formData.handler_by}
             onChange={handleChange}
             className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
             required
-          >
+          >*/}
             {/*<option value="">Select Handler</option>*/}
-            <option value={formData.handler_by}>{formData.handler_by}</option>
+           {/* <option value={formData.handler_by}>{formData.handler_by}</option>
             {employeeOption?.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
-          </select>
+          </select>*/}
+
+
+            {/*<select
+      name="handler_by"
+      value={formData.handler_by || ""}
+      onChange={handleChange}
+      className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+      required
+    >
+      <option value="" disabled>
+        Select Handler
+      </option>
+      {employeeOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>*/}
+
+
+          <AsyncSelect
+          cacheOptions
+          defaultOptions={employeeOptions}
+          name="handler_by"
+          loadOptions={loadStaffs}
+          onChange={(selected: Option | null) =>
+    setFormData((prev) => ({
+      ...prev,
+      handler_by: selected ? selected.value : "",
+    }))
+  }
+          value={employeeOptions.find((opt) => opt.value === formData.handler_by) || null}
+          isDisabled={employeeOptions.length === 0}
+          placeholder="Select or search handler by"
+        />
+
+
+
         </div>
 
         <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">

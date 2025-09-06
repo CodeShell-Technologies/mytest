@@ -12,6 +12,9 @@ import AttendanceReport from "./AttendnceReport";
 import AttendanceLogList from "./AttendanceLogList";
 import AttendanceSheet from "./AttendanceSheet";
 import AttendanceReportSheet from "./AttendanceReportSheet";
+import toast, { Toaster } from "react-hot-toast";
+import { useAuthStore } from "src/stores/authStore";
+import useBranchStore from "src/stores/useBranchStore";
 const Attandance = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,6 +23,13 @@ const Attandance = () => {
   const [sheetData, setSheetData] = useState([]);
   const [selectStatus, setSelectStatus] = useState("");
   const [activeTab, setActiveTab] = useState("employeeattandance");
+
+  const token = useAuthStore((state) => state.accessToken);
+  const permission = useAuthStore((state) => state.permissions);
+  const staff_id = useAuthStore((state) => state.staff_id);
+  const userBranchCode = useAuthStore((state) => state.branchcode);
+  // const [showEditModal, setShowEditModal] = useState(false);
+  const role = useAuthStore((state) => state.role);
 
   const filterOptions = [
     { value: "client", label: "Client" },
@@ -57,12 +67,26 @@ const Attandance = () => {
     },
   ];
 
-  const tabs = [
-    { id: "employeeattandance", label: " Attendance Log" },
-    { id: "createattendance", label: " Attendance Entry" },
-    { id: "attendancereport", label: "Report" },
-    {id:"attendancesheet",label:"Attendance Report"}
-  ];
+
+  // const tabs = [
+  //   { id: "employeeattandance", label: " Attendance Log" },
+  //   { id: "createattendance", label: " Attendance Entry" },
+  //   { id: "attendancereport", label: "Report" },
+  //   // {id:"attendancesheet",label:"Attendance Report"}
+  // ];
+
+  const tabs =
+  role === "superadmin" || role === "hr" || role === "admin"
+    ? [
+        { id: "employeeattandance", label: "Attendance Log" },
+        { id: "createattendance", label: "Attendance Entry" },
+        { id: "attendancereport", label: "Report" },
+      ]
+    : [
+        { id: "employeeattandance", label: "Attendance Log" },
+      ];
+
+
 
   const getData = () => {
     return data;
@@ -188,11 +212,14 @@ const Attandance = () => {
         {activeTab === "employeeattandance" && (
           <AttendanceLogList />
         )}
-        {activeTab === "attendancesheet" && (
+        {/*{activeTab === "attendancesheet" && (
           <div>
             <AttendanceReportSheet/>
           </div>
-        )}
+        )}*/}
+       
+
+
         {activeTab === "createattendance" && (
           <div>
             <AttendanceSheet />
@@ -204,6 +231,24 @@ const Attandance = () => {
             <AttendanceReport />
           </div>
         )}
+
+
+      {/*  {role === "superadmin" && role === "hr" && role === "admin" && (
+  <>
+    {activeTab === "createattendance" && (
+      <div>
+        <AttendanceSheet />
+      </div>
+    )}
+
+    {activeTab === "attendancereport" && (
+      <div>
+        <AttendanceReport />
+      </div>
+    )}
+  </>
+)}
+*/}
 
         <Modal
           isVisible={showModal}

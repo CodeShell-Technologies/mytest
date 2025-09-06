@@ -21,6 +21,10 @@ import { useMediaQuery } from "../hooks/use-click-outside";
 import BranchMeetingForm from "./Meeting/BranchMeetingForm";
 import CreateBranchRole from "./CreateBranchRole";
 
+import CreateBranchDepartment from "./CreateBranchDepartment";
+
+import CreateBranchDesignation from "./CreateBranchDesignation";
+
 const BranchViewPage = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,6 +37,8 @@ const BranchViewPage = () => {
   const [totalItem, setTotalItem] = useState(0);
   const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreatedepModal, setShowCreatedepModal] = useState(false);
+  const [showCreatedesModal, setShowCreatedesModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -129,6 +135,27 @@ console.log('useparammss',id)
     fetchBranches(token);
     getBranch();
   };
+
+
+    const handleCreatedepSuccess = () => {
+    setShowCreatedepModal(false);
+    toast.success("Department added successfully!");
+    fetchBranches(token);
+    getBranch();
+  };
+
+
+
+  const handleCreatedesSuccess = () => {
+    setShowCreatedesModal(false);
+    toast.success("Designation added successfully!");
+    fetchBranches(token);
+    getBranch();
+  };
+
+
+
+
 
   const handleSearch = (value) => {
     setSearchTerm(value);
@@ -329,6 +356,21 @@ const handleMeetingSuccess=()=>{
                 {!isMobile && "New Role"} +
               </button>
               <button
+                onClick={() => setShowCreatedepModal(true)}
+                className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
+              >
+                {!isMobile && "New Department"} +
+              </button>
+
+
+              <button
+                onClick={() => setShowCreatedesModal(true)}
+                className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
+              >
+                {!isMobile && "New Designation"} +
+              </button>
+
+              <button
                 onClick={() => setShowMeetingModal(true)}
                 className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
               >
@@ -410,6 +452,7 @@ const handleMeetingSuccess=()=>{
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Create New Role"
+        closeOnOutsideClick={false}
       >
         <CreateBranchRole
         branch={data}
@@ -418,11 +461,46 @@ const handleMeetingSuccess=()=>{
         />
       </Modal>
 
+
+
+
+
+      <Modal
+        isVisible={showCreatedesModal}
+        className="w-full md:w-[800px]"
+        onClose={() => setShowCreatedesModal(false)}
+        title="Create New Role"
+        closeOnOutsideClick={false}
+      >
+        <CreateBranchDesignation
+        branch={data}
+          onSuccess={handleCreatedesSuccess}
+          onCancel={() => setShowCreatedesModal(false)}
+        />
+      </Modal>
+
+
+      <Modal
+        isVisible={showCreatedepModal}
+        className="w-full md:w-[800px]"
+        onClose={() => setShowCreatedepModal(false)}
+        title="Create New Department"
+        closeOnOutsideClick={false}
+      >
+        <CreateBranchDepartment
+        branch={data}
+          onSuccess={handleCreatedepSuccess}
+          onCancel={() => setShowCreatedepModal(false)}
+        />
+      </Modal>
+
+
       <Modal
         isVisible={showEditModal}
         className="w-full md:w-[800px]"
         onClose={() => setShowEditModal(false)}
         title="Edit Branch"
+        closeOnOutsideClick={false}
       >
         <EditBranchForm
           branch={selectedBranch}
@@ -435,6 +513,7 @@ const handleMeetingSuccess=()=>{
         className="w-full md:w-[800px]"
         onClose={() =>setShowMeetingModal(false)}
         title="Create Branch Meeting"
+        closeOnOutsideClick={false}
       >
         <BranchMeetingForm
           branch={selectedBranch}
@@ -447,6 +526,7 @@ const handleMeetingSuccess=()=>{
         className="w-full md:w-[600px]"
         onClose={() => setShowDeleteModal(false)}
         title="Delete Branch"
+        closeOnOutsideClick={false}
       >
         
         <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">

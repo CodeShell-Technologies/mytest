@@ -45,7 +45,7 @@ const AddPayRequest = ({ project, onSuccess, onCancel }) => {
     const fetchMilestones = async () => {
       try {
         const response = await axios.get(
-          `${BASE_URL}/project/milestone/dropdown?project_code=${project.project_code}`,
+          `${BASE_URL}/project/milestone/dropdown?project_code=${project.project_code}&paystatus=none`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

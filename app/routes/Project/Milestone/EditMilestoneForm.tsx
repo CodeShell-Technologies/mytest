@@ -473,12 +473,22 @@ import useEmployeeStore from "src/stores/useEmployeeStore";
 import { BASE_URL } from "~/constants/api";
 import {formatDate} from "../../../../src/utils/dateUtils"
 
+import AsyncSelect from "react-select/async";
+
 const EditMilestoneForm = ({project,milestone, onSuccess, onCancel }) => {
   console.log("projecttttdataaa",project)
   const branchCodeOption = useBranchStore((state) => state.branchCodeOptions);
   const [loading, setLoading] = useState(false);
   const clientcodeOptions = useClientStore((state) => state.clientscodeOptions);
   const [error, setError] = useState(null);
+  
+  const staff_ids = useAuthStore((state) => state.staff_id);
+  const [department, setDepartment] = useState<string | null>(null);
+  const [staffOptions, setStaffOptions] = useState<any[]>([]);
+  const [isFetchingStaff, setIsFetchingStaff] = useState(false);
+  const [employeeOptions, setEmployeeOptions] = useState<{ value: string; label: string }[]>([]);
+
+
   const allProjectcodeOptions = useProjectStore(
     (state) => state.allProjectcodeOptions
   );
@@ -585,6 +595,52 @@ const EditMilestoneForm = ({project,milestone, onSuccess, onCancel }) => {
       setLoading(false);
     }
   };
+
+
+
+  useEffect(() => {
+    if (!formData.branchcode) {
+      setEmployeeOptions([]);
+      return;
+    }
+
+    async function fetchEmployees() {
+      try {
+        const res = await fetch(
+          `${BASE_URL}/getStaffbranch?branchcode=${encodeURIComponent(formData.branchcode)}`
+        );
+        const data = await res.json();
+
+        if (data?.status && Array.isArray(data.data)) {
+          const options = data.data.map((emp: Employee) => ({
+            value: emp.staff_id,
+            label: `${emp.firstname} ${emp.lastname} (${emp.designation})`,
+          }));
+          setEmployeeOptions(options);
+        } else {
+          setEmployeeOptions([]);
+        }
+      } catch (err) {
+        console.error("Error fetching employees:", err);
+        setEmployeeOptions([]);
+      }
+    }
+
+    fetchEmployees();
+  }, [formData.branchcode]); // 🔑 re-fetch whenever branch changes
+
+
+const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = employeeOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+
+
+
 
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
@@ -737,7 +793,7 @@ const EditMilestoneForm = ({project,milestone, onSuccess, onCancel }) => {
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             <User className="inline mr-1" size={14} /> Assigned To
           </p>
-          <select
+{/*          <select
             name="handler_by"
             value={formData.handler_by}
             onChange={handleChange}
@@ -749,13 +805,46 @@ const EditMilestoneForm = ({project,milestone, onSuccess, onCancel }) => {
                 {option.label}
               </option>
             ))}
-          </select>
+          </select>*/}
+
+{/*          	<select
+      name="handler_by"
+      value={formData.handler_by }
+      onChange={handleChange}
+      className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+      required
+    >
+      <option value={formData.handler_by } >
+        {formData.handler_by }
+      </option>
+      {employeeOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>*/}
+
+
+          <AsyncSelect
+          cacheOptions
+          defaultOptions={employeeOptions}
+          name="handler_by"
+          loadOptions={loadStaffs}
+          onChange={(selected: Option | null) =>
+            setFormData({ ...formData, handler_by: selected ? selected.value : "" })
+          }
+          value={employeeOptions.find((opt) => opt.value === formData.handler_by) || null}
+          isDisabled={employeeOptions.length === 0}
+          placeholder="Select or search handler by"
+        />
+
+
         </div>
         <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             <User className="inline mr-1" size={14} /> Select Approved Staff
           </p>
-          <select
+          {/*<select
             name="approved_staff_id"
             value={formData.approved_staff_id}
             onChange={handleChange}
@@ -767,7 +856,40 @@ const EditMilestoneForm = ({project,milestone, onSuccess, onCancel }) => {
                 {option.label}
               </option>
             ))}
-          </select>
+          </select>*/}
+
+
+{/*          	<select
+      name="approved_staff_id"
+      value={formData.approved_staff_id }
+      onChange={handleChange}
+      className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+      required
+    >
+      <option value={formData.approved_staff_id }>
+        {formData.approved_staff_id }
+      </option>
+      {employeeOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+*/}
+
+
+             <AsyncSelect
+          cacheOptions
+          defaultOptions={employeeOptions}
+          name="approved_staff_id"
+          loadOptions={loadStaffs}
+          onChange={(selected: Option | null) =>
+            setFormData({ ...formData, approved_staff_id: selected ? selected.value : "" })
+          }
+          value={employeeOptions.find((opt) => opt.value === formData.approved_staff_id) || null}
+          isDisabled={employeeOptions.length === 0}
+          placeholder="Select or search client"
+        />
         </div>
         <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">

@@ -247,7 +247,7 @@ const SalaryList = () => {
         {
           data: (
             <div className="flex justify-center gap-2">
-              <Link to={`/employee/salary_slip`}>
+              <Link to={`/employee/salary_slip/${branch.id}`}>
                 <button
                   className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
                   title="View"
@@ -396,6 +396,9 @@ const SalaryList = () => {
               tbody={tbody}
               responsive={true}
               className="min-w-full"
+              enableFilters={true}
+  enableSorting={true}
+
             />
           </div>
         </div>
@@ -417,6 +420,7 @@ const SalaryList = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Create New Salary"
+          closeOnOutsideClick={false}
       >
         <CreateSalaryForm
           onSuccess={() => {

@@ -593,7 +593,8 @@
 // };
 
 // export default EmployeeTimeSheet;
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import DataTable from "src/component/DataTable";
 import CustomPagination from "src/component/CustomPagination";
 import Dropdown from "src/component/DrapDown";
@@ -607,6 +608,8 @@ import useBranchStore from "src/stores/useBranchStore";
 import { useMediaQuery } from "~/routes/hooks/use-click-outside";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+
+
 
 const EmployeeTimeSheet = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
@@ -637,6 +640,14 @@ const EmployeeTimeSheet = () => {
   const role = permission[0]?.role || 'employee'; // Default to employee if no role
 console.log("roleeeeee",role,userBranchCode,staff_id)
   console.log('User role and details:', { role, staff_id, userBranchCode });
+
+  	const navigate = useNavigate();
+
+  // --- Sorting & Filtering State ---
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [columnFilters, setColumnFilters] = useState({});
+
+
 
   const {
     branchCodeOptions,
@@ -888,25 +899,108 @@ useEffect(()=>{
 
     }
 },[])
-  const checkInOutThead = () => [
-    {data:"Id"},
-    { data: "Task ID" },
-    { data: "Project" },
-    { data: "Task" },
-    { data: "Subtask" },
-    { data: "Check-in" },
-    { data: "Check-out" },
-    { data: "Duration (mins)" },
-    { data: "Staff" },
+
+ const columns = [
+    { key: "id", label: "Id" },
+    { key: "task_id", label: "Task ID" },
+    { key: "project_title", label: "Project" },
+    { key: "task_title", label: "Task" },
+    { key: "subtask_title", label: "Subtask" },
+    { key: "check_in", label: "Check-in" },
+    { key: "check_out", label: "Check-out" },
+    { key: "duration", label: "Duration (mins)" },
+    { key: "staff_name", label: "Staff" },
   ];
 
-  const checkInOutTbody = () => {
+  // --- Sorting handler ---
+  const handleSort = (key) => {
+    if (sortConfig.key === key) {
+      setSortConfig({
+        key,
+        direction: sortConfig.direction === "asc" ? "desc" : "asc",
+      });
+    } else {
+      setSortConfig({ key, direction: "asc" });
+    }
+  };
+
+  // --- Filter handler ---
+  const handleFilterChange = (key, value) => {
+    setColumnFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // --- Filtered & Sorted Data ---
+  const processedData = useMemo(() => {
     if (!checkInOutData?.data) return [];
-    
-    return checkInOutData.data.map((item, index) => ({
+
+    let filtered = checkInOutData.data.filter((item) =>
+      columns.every((col) => {
+        if (col.filterable === false || !columnFilters[col.key]) return true;
+
+        let value = item[col.key] ?? "";
+        return value.toString().toLowerCase().includes(columnFilters[col.key].toLowerCase());
+      })
+    );
+
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        let valA = a[sortConfig.key] ?? "";
+        let valB = b[sortConfig.key] ?? "";
+
+        // Convert dates to comparable values
+        if (sortConfig.key === "check_in" || sortConfig.key === "check_out") {
+          valA = valA ? new Date(valA) : 0;
+          valB = valB ? new Date(valB) : 0;
+        }
+
+        if (typeof valA === "number" && typeof valB === "number") {
+          return sortConfig.direction === "asc" ? valA - valB : valB - valA;
+        } else {
+          return sortConfig.direction === "asc"
+            ? valA.toString().localeCompare(valB.toString())
+            : valB.toString().localeCompare(valA.toString());
+        }
+      });
+    }
+
+    return filtered;
+  }, [checkInOutData, columnFilters, sortConfig]);
+
+  // --- Render Table Head ---
+  const checkInOutThead = () =>
+    columns.map((col) => ({
+      data: (
+        <div className="flex flex-col">
+          <span
+            className={`cursor-pointer ${col.className || ""}`}
+            onClick={() => handleSort(col.key)}
+          >
+            {col.label}
+            {sortConfig.key === col.key &&
+              (sortConfig.direction === "asc" ? " 🔼" : " 🔽")}
+          </span>
+          {col.filterable !== false && (
+            <input
+              type="text"
+              placeholder={`Search ${col.label}`}
+              value={columnFilters[col.key] || ""}
+              onChange={(e) => handleFilterChange(col.key, e.target.value)}
+              className="w-full text-xs border rounded px-1 py-0.5 mt-1"
+            />
+          )}
+        </div>
+      ),
+      className: col.className,
+    }));
+
+  // --- Render Table Body ---
+  const checkInOutTbody = () => {
+    if (!processedData) return [];
+
+    return processedData.map((item, index) => ({
       id: item.id || index,
       data: [
-        {data:index+1},
+        { data: index + 1 },
         { data: item.task_id },
         { data: item.project_title },
         { data: item.task_title },
@@ -915,9 +1009,53 @@ useEffect(()=>{
         { data: item.check_out ? new Date(item.check_out).toLocaleString() : "Still checked in" },
         { data: item.duration },
         { data: item.staff_name },
-      ],
+      ].map((col, idx) => ({
+        ...col,
+        data: (
+          <div
+            onDoubleClick={() => navigate(`/checkinout/${item.id}`)}
+            className="w-full h-full cursor-pointer"
+          >
+            {col.data}
+          </div>
+        ),
+      })),
     }));
   };
+
+
+
+
+  // const checkInOutThead = () => [
+  //   {data:"Id"},
+  //   { data: "Task ID" },
+  //   { data: "Project" },
+  //   { data: "Task" },
+  //   { data: "Subtask" },
+  //   { data: "Check-in" },
+  //   { data: "Check-out" },
+  //   { data: "Duration (mins)" },
+  //   { data: "Staff" },
+  // ];
+
+  // const checkInOutTbody = () => {
+  //   if (!checkInOutData?.data) return [];
+    
+  //   return checkInOutData.data.map((item, index) => ({
+  //     id: item.id || index,
+  //     data: [
+  //       {data:index+1},
+  //       { data: item.task_id },
+  //       { data: item.project_title },
+  //       { data: item.task_title },
+  //       { data: item.subtask_title },
+  //       { data: new Date(item.check_in).toLocaleString() },
+  //       { data: item.check_out ? new Date(item.check_out).toLocaleString() : "Still checked in" },
+  //       { data: item.duration },
+  //       { data: item.staff_name },
+  //     ],
+  //   }));
+  // };
 // const calculateTotalDuration = () => {
 //   if (!checkInOutData?.data) return 0;
   

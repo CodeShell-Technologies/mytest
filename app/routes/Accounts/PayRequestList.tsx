@@ -5,7 +5,7 @@ import DataTable from "src/component/DataTable";
 import CustomPagination from "src/component/CustomPagination";
 import SearchInput from "src/component/SearchInput";
 import Dropdown from "src/component/DrapDown";
-import { FileDown, Eye, DollarSign, LogOut } from "lucide-react";
+import { FileDown, Eye, DollarSign, LogOut,SquarePen } from "lucide-react";
 import * as XLSX from "xlsx";
 import axios from "axios";
 import { BASE_URL, toastposition } from "~/constants/api";
@@ -37,8 +37,14 @@ const PayRequestList = () => {
   const { id } = useParams();
   const inv_id = decodeURIComponent(id);
 
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+const [selectedRequest, setSelectedRequest] = useState(null);
+
+
   const [paymentForm, setPaymentForm] = useState({
     project_code: "",
+    milestone_code:"",
     invoice_no: "",
     request_id: "",
     paid_amount: "",
@@ -123,6 +129,7 @@ const PayRequestList = () => {
   const handlePaymentUpdate = (request) => {
     setPaymentForm({
       project_code: request.project_code,
+      milestone_code:request.milestone_code,
       invoice_no: invoiceDetails.invoice_no,
       request_id: request.request_id,
       paid_amount: request.balance_amount,
@@ -151,6 +158,15 @@ const PayRequestList = () => {
       toast.error(error.response?.data?.message || "Failed to record payment");
     }
   };
+
+
+
+
+  const handleUpdatePayment = (requestId) => {
+  const req = data.find((r) => r.request_id === requestId);
+  setSelectedRequest(req);
+  setIsEditOpen(true);
+};
 
   const handlePaymentFormChange = (e) => {
     const { name, value } = e.target;
@@ -235,6 +251,14 @@ const PayRequestList = () => {
               >
                 <Eye size={18} />
               </button>
+
+              {/*<button
+                className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+                onClick={() => handleUpdatePayment(request.request_id)}
+                title="Edit"
+              >
+                <SquarePen size={18} />
+              </button>*/}
               <button
                 onClick={() => handlePaymentUpdate(request)}
                 className="p-1 text-red-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
@@ -312,6 +336,106 @@ const PayRequestList = () => {
                 className="min-w-full"
               />
             </div>
+          
+{isEditOpen && selectedRequest && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6">
+      <h2 className="text-lg font-semibold mb-4">
+        Edit Request {selectedRequest.request_id}
+      </h2>
+
+      <div className="space-y-3">
+        {/* Milestone */}
+        <div>
+          <label className="block text-sm font-medium">Milestone</label>
+          <input
+            type="text"
+            value={selectedRequest.miles_title}
+            onChange={(e) =>
+              setSelectedRequest({
+                ...selectedRequest,
+                miles_title: e.target.value,
+              })
+            }
+            className="w-full border rounded p-2"
+          />
+        </div>
+
+        {/* Amount */}
+        <div>
+          <label className="block text-sm font-medium">Amount</label>
+          <input
+            type="number"
+            value={selectedRequest.milestone_amount}
+            onChange={(e) =>
+              setSelectedRequest({
+                ...selectedRequest,
+                milestone_amount: e.target.value,
+              })
+            }
+            className="w-full border rounded p-2"
+          />
+        </div>
+
+        {/* Status */}
+        <div>
+          <label className="block text-sm font-medium">Status</label>
+          <select
+            value={selectedRequest.status}
+            onChange={(e) =>
+              setSelectedRequest({
+                ...selectedRequest,
+                status: e.target.value,
+              })
+            }
+            className="w-full border rounded p-2"
+          >
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex justify-end mt-4 space-x-2">
+        <button
+          onClick={() => setIsEditOpen(false)}
+          className="px-4 py-2 bg-gray-500 text-white rounded"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={async () => {
+            try {
+              const res = await fetch(
+                `${BASE_URL}/updateRequest/${selectedRequest.request_id}`,
+                {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(selectedRequest),
+                }
+              );
+              if (res.ok) {
+                alert("Request updated successfully!");
+                setIsEditOpen(false);
+                // 🔄 refresh data after update
+              } else {
+                alert("Update failed");
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
           </div>
         </div>
       </div>
@@ -412,6 +536,18 @@ const PayRequestList = () => {
                     {paymentForm.project_code}
                   </p>
                 </div>
+
+
+
+                   <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Milestone Code
+                  </p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+                    {paymentForm.milestone_code}
+                  </p>
+                </div>
+
                 <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Invoice No

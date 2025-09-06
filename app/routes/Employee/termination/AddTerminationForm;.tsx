@@ -7,17 +7,40 @@ import { useAuthStore } from "src/stores/authStore";
 import useBranchStore from "src/stores/useBranchStore";
 import { Users, User, Hash, Building, Briefcase, Calendar, FileText } from "lucide-react";
 import { useStaffFilter } from "~/routes/hooks/UseStaffFilter";
-
+import AsyncSelect from "react-select/async";
 const AddTerminationForm = ({ onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [fetchingTeam, setFetchingTeam] = useState(false);
-  const [error, setError] = useState(null);
+  // const [error, setError] = useState(null);
   const token = useAuthStore((state) => state.accessToken);
   const permissions = useAuthStore((state) => state.permissions);
   const userRole = permissions[0].role;
   const branchCode = useBranchStore((state) => state.branchCodeOptions);
   const branchcodeForNor = useAuthStore((state) => state.branchcode);
-  
+      // const [staffOptions, setStaffOptions] = useState([]);
+  const [teamOptions, setTeamOptions] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+
+
+
+    const [staffOptions, setStaffOptions] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [isFetchingStaff, setIsFetchingStaff] = useState(false);
+
+
+  const [departments, setDepartments] = useState<Department[]>([]);
+  // const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<Option[]>([]);
+
+  const [departmentDesignations, setDepartmentDesignations] = useState<
+    Record<string, string[]>
+  >({});
+  // const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+  const [designationOptions, setDesignationOptions] = useState<Option[]>([]);
+  const [error, setError] = useState("");
+  const [roleOptions, setRoleOptions] = useState([]);
+
+
   // Branch code options based on user role
   const branchCodeOptions =
     userRole === "superadmin"
@@ -45,13 +68,118 @@ const AddTerminationForm = ({ onSuccess, onCancel }) => {
   });
 
   // Staff filter hook
-  const {
-    departmentOptions,
-    selectedDepartment,
-    staffOptions,
-    isFetchingStaff,
-    handleDepartmentChange,
-  } = useStaffFilter(formData.branchcode);
+  // const {
+    // departmentOptions,
+    // selectedDepartment,
+    // staffOptions,
+    // isFetchingStaff,
+    // handleDepartmentChange,
+  // } = useStaffFilter(formData.branchcode);
+
+
+ useEffect(() => {
+    if (selectedDepartment) {
+      fetchStaffOptions();
+    }
+  }, [selectedDepartment]);
+
+  const fetchStaffOptions = async () => {
+    setIsFetchingStaff(true);
+    try {
+      let url = `${BASE_URL}/users/dropdown?department=${selectedDepartment}`;
+      
+      // If user is not superadmin, add branchcode to the URL
+      if (userRole !== "superadmin") {
+        url += `&branchcode=${branchcodeForNor}`;
+      }
+
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data && response.data.data) {
+        const options = response.data.data.map(user => ({
+          value: user.staff_id,
+          label: `${user.firstname + user.lastname} - ${user.staff_id}`,
+          dept: user.department,
+    desig: user.designation,
+    branchcode: user.branchcode,
+    branch_name: user.branch_name, // if backend sends it
+        }));
+        setStaffOptions(options);
+      }
+    } catch (err) {
+      toast.error("Failed to fetch staff options", {
+        style: {
+          border: "1px solid rgb(185 28 28)",
+          padding: "14px",
+          color: "rgb(185 28 28)",
+        },
+        iconTheme: {
+          primary: "rgb(185 28 28)",
+          secondary: "#FFFAEE",
+        },
+      });
+    } finally {
+      setIsFetchingStaff(false);
+    }
+  };
+
+
+
+useEffect(() => {
+  async function fetchData() {
+    try {
+      const [deptRes, desigRes] = await Promise.all([
+        fetch(`${BASE_URL}/getDepartments`),
+        fetch(`${BASE_URL}/getDesignations`),
+      ]);
+
+      const deptData = await deptRes.json();
+      const desigData = await desigRes.json();
+
+      // Set full department list
+      setDepartments(deptData.data);
+
+      // Department options (names only)
+      const deptNames = deptData.data
+        .map((d: Department) => d.name)
+        .filter(Boolean)
+        .map((name: string) => ({ value: name, label: name }));
+      setDepartmentOptions(deptNames);
+
+      // Build mapping { departmentName: [designation1, designation2] }
+      const deptDesigs: Record<string, Option[]> = {};
+
+      desigData.data.forEach((item: Designation) => {
+        const dept = item.department;
+        if (!deptDesigs[dept]) {
+          deptDesigs[dept] = [];
+        }
+        deptDesigs[dept].push({
+          value: item.designation,
+          label: item.designation,
+        });
+      });
+
+      setDepartmentDesignations(deptDesigs); // You probably want to save it in state
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }
+
+  fetchData(); // ✅ call the async function
+
+}, []); // ✅ empty dependency array (or add dependencies as needed)
+
+   const handleDepartmentChange = (e) => {
+    setSelectedDepartment(e.target.value);
+    // Reset staff_id when department changes
+    setFormData(prev => ({ ...prev, staff_id: "" }));
+  };
+
+
+
 
   // Handle form field changes
   const handleChange = (e) => {
@@ -61,6 +189,21 @@ const AddTerminationForm = ({ onSuccess, onCancel }) => {
       [name]: value,
     }));
   };
+
+
+  useEffect(() => {
+    if (formData.branchcode) {
+      fetchTeams(formData.branchcode);
+      // fetchProjects(formData.branchcode);
+    } else {
+      setTeamOptions([]);
+      setTeamMembers([]);
+      // setProjectOptions([]);
+      // setMilestoneOptions([]);
+    }
+  }, [formData.branchcode]);
+
+
 
   // Fetch team details when staff is selected
   useEffect(() => {
@@ -95,19 +238,101 @@ const AddTerminationForm = ({ onSuccess, onCancel }) => {
   }, [formData.staff_id, token]);
 
   // Set staff name when staff is selected
-  useEffect(() => {
-    if (formData.staff_id && staffOptions.length > 0) {
-      const selectedStaff = staffOptions.find(option => option.value === formData.staff_id);
-      if (selectedStaff) {
-        setFormData(prev => ({
-          ...prev,
-          staff_name: selectedStaff.label.split(' - ')[0],
-          department: selectedStaff.dept || "",
-          designation: selectedStaff.desig || ""
-        }));
-      }
+  // useEffect(() => {
+  //   if (formData.staff_id && staffOptions.length > 0) {
+  //     const selectedStaff = staffOptions.find(option => option.value === formData.staff_id);
+  //     if (selectedStaff) {
+  //       setFormData(prev => ({
+  //         ...prev,
+  //         staff_name: selectedStaff.label.split(' - ')[0],
+  //         department: selectedStaff.dept || "",
+  //         designation: selectedStaff.desig || ""
+  //       }));
+  //     }
+  //   }
+  // }, [formData.staff_id, staffOptions]);
+
+
+useEffect(() => {
+  if (formData.staff_id && staffOptions.length > 0) {
+    const selectedStaff = staffOptions.find(
+      (option) => option.value === formData.staff_id
+    );
+
+    if (selectedStaff) {
+      setFormData((prev) => ({
+        ...prev,
+        staff_name: selectedStaff.label.split(" - ")[0],
+        department: selectedStaff.dept || prev.department,
+        designation: selectedStaff.desig || prev.designation,
+        branchcode: selectedStaff.branchcode || prev.branchcode,
+        branch_name: selectedStaff.branch_name || prev.branch_name,
+      }));
     }
-  }, [formData.staff_id, staffOptions]);
+  }
+}, [formData.staff_id, staffOptions]);
+
+
+  const fetchTeams = async (branchcode) => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/teams/read?branchcode=${branchcode}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data && response.data.data) {
+        const options = response.data.data.map((team) => ({
+          value: team.team_id,
+          label: team.team_name,
+          team_lead: team.team_lead,
+        }));
+        setTeamOptions(options);
+      }
+    } catch (err) {
+      console.error("Error fetching teams:", err);
+      toast.error("Failed to load teams");
+    }
+  };
+
+const fetchTeamMembers = async (teamId) => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/teams/read/profile?team_id=${teamId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data && response.data.data) {
+        // Filter out team leads (role === "lead")
+        const members = response.data.data.members.filter(
+          (member) => member.role !== "lead"
+        );
+        setTeamMembers(members);
+
+        // Auto-set handler_by to the team lead
+        const teamLead = response.data.data.members.find(
+          (member) => member.role === "lead"
+        );
+        if (teamLead) {
+          setFormData((prev) => ({
+            ...prev,
+            handler_by: teamLead.staff_id,
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching team members:", err);
+      toast.error("Failed to load team members");
+    }
+  };
+
+
+
+
+
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -144,6 +369,35 @@ const AddTerminationForm = ({ onSuccess, onCancel }) => {
     }
   };
 
+
+
+      const loadBranches = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = branchCodeOption.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+     const loadDeps = (inputValue: string, callback: (options: Option[]) => void) => {
+  const filtered = departmentOptions.filter((c) =>
+    c.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
+  callback(filtered);
+};
+
+
+     const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = staffOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+
+
+
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
       <Toaster position={toastposition} />
@@ -161,7 +415,7 @@ const AddTerminationForm = ({ onSuccess, onCancel }) => {
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <Hash className="inline mr-1" size={14} /> Branch Code
               </p>
-              <select
+              {/*<select
                 name="branchcode"
                 value={formData.branchcode}
                 onChange={handleChange}
@@ -174,7 +428,30 @@ const AddTerminationForm = ({ onSuccess, onCancel }) => {
                     {option.label}
                   </option>
                 ))}
-              </select>
+              </select>*/}
+
+
+
+                         <AsyncSelect
+  cacheOptions
+  defaultOptions={departmentOptions} // must be [{ value, label }]
+  name="department"
+  loadOptions={loadDeps}
+  onChange={(selected: Option | null) => {
+    setSelectedDepartment(selected ? selected.value : ""); // ✅ update local state
+    setFormData((prev) => ({
+      ...prev,
+      department: selected ? selected.value : "",
+      staff_id: "", // ✅ reset staff_id when department changes
+    }));
+  }}
+  value={
+    departmentOptions.find((opt) => opt.value === formData.department) || null
+  }
+  placeholder="Select or search department"
+/>
+
+
             </div>
 
             {/* Branch Name (readonly) */}
@@ -195,7 +472,7 @@ const AddTerminationForm = ({ onSuccess, onCancel }) => {
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <Building className="inline mr-1" size={14} /> Department
               </p>
-              <select
+ {/*             <select
                 value={selectedDepartment}
                 onChange={(e) => {
                   handleDepartmentChange(e.target.value);
@@ -221,7 +498,30 @@ const AddTerminationForm = ({ onSuccess, onCancel }) => {
                     {dept}
                   </option>
                 ))}
-              </select>
+              </select>*/}
+
+
+                         <AsyncSelect
+  cacheOptions
+  defaultOptions={departmentOptions} // must be [{ value, label }]
+  name="department"
+  loadOptions={loadDeps}
+  onChange={(selected: Option | null) => {
+    setSelectedDepartment(selected ? selected.value : ""); // ✅ update local state
+    setFormData((prev) => ({
+      ...prev,
+      department: selected ? selected.value : "",
+      staff_id: "", // ✅ reset staff_id when department changes
+    }));
+  }}
+  value={
+    departmentOptions.find((opt) => opt.value === formData.department) || null
+  }
+  placeholder="Select or search department"
+/>
+
+
+
             </div>
 
             {/* Designation (readonly) */}
@@ -247,21 +547,40 @@ const AddTerminationForm = ({ onSuccess, onCancel }) => {
                   Loading staff...
                 </div>
               ) : (
-                <select
-                  name="staff_id"
-                  value={formData.staff_id}
-                  onChange={handleChange}
-                  className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-                  required
-                  disabled={!selectedDepartment || staffOptions.length === 0}
-                >
-                  <option value="">Select Staff</option>
-                  {staffOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                // <select
+                //   name="staff_id"
+                //   value={formData.staff_id}
+                //   onChange={handleChange}
+                //   className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+                //   required
+                //   disabled={!selectedDepartment || staffOptions.length === 0}
+                // >
+                //   <option value="">Select Staff</option>
+                //   {staffOptions.map((option) => (
+                //     <option key={option.value} value={option.value}>
+                //       {option.label}
+                //     </option>
+                //   ))}
+                // </select>
+
+
+
+                       <AsyncSelect
+          cacheOptions
+          defaultOptions={staffOptions}
+          name="staff_id"
+          loadOptions={loadStaffs}
+          onChange={(selected: Option | null) =>
+            setFormData({ ...formData, staff_id: selected ? selected.value : "" })
+          }
+          value={staffOptions.find((opt) => opt.value === formData.staff_id) || null}
+          isDisabled={!formData.department || staffOptions.length === 0}
+          placeholder="Select or search staff"
+        />
+
+
+
+
               )}
               {selectedDepartment && staffOptions.length === 0 && !isFetchingStaff && (
                 <div className="text-xs text-gray-500 mt-1">

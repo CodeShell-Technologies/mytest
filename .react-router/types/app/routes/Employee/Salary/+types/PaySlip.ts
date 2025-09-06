@@ -12,8 +12,8 @@ export type Info = {
   parents: [Parent0, Parent1],
   id: "routes/Employee/Salary/PaySlip"
   file: "routes/Employee/Salary/PaySlip.tsx"
-  path: "/employee/salary_slip"
-  params: {} & { [key: string]: string | undefined }
+  path: "/employee/salary_slip/:id"
+  params: {"id": string} & { [key: string]: string | undefined }
   module: Module
   loaderData: T.CreateLoaderData<Module>
   actionData: T.CreateActionData<Module>

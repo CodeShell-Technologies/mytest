@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useMemo  } from "react";
 import DataTable from "src/component/DataTable";
 import CustomPagination from "src/component/CustomPagination";
 import SearchInput from "src/component/SearchInput";
@@ -7,6 +7,7 @@ import Dropdown from "src/component/DrapDown";
 import { ClipboardType, FileDown, Network, Tag } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Link } from "react-router";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BASE_URL, toastposition } from "~/constants/api";
 import CreateBranchForm from "../../Branch/CreateBranchForm";
@@ -46,6 +47,13 @@ const Milestone = ({projectData}) => {
   const [showFilters, setShowFilters] = useState(false);
   const [deleteData, setDeleteData] = useState(null);
   const project_code=projectData.project_code;
+
+  const navigate = useNavigate();
+
+  // --- State for Sorting & Filtering ---
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [columnFilters, setColumnFilters] = useState({});
+
   console.log("project codeeemiles",project_code)
   const [inActiveData, setInActiveData] = useState({
     delete_type: "",
@@ -109,12 +117,12 @@ const Milestone = ({projectData}) => {
   ) => {
     setLoading(true);
     try {
-      let url = `${BASE_URL}/project/milestone/read?project_code=${project_code}&page=${page}&limit=${limit}`;
+      let url = `${BASE_URL}/project/milestone/read?project_code=${encodeURIComponent(project_code)}&page=${page}&limit=${limit}`;
 
       if (search) url += `&search=${search}`;
       if (status) url += `&status=${status}`;
       if (priority) url += `&priority=${priority}`;
-      if (branchCode) url += `&branchcode=${branchCode}`;
+      if (branchCode) url += `&branchcode=${encodeURIComponent(branchCode)}`;
       if (sort) url += `&dec=${sort}`;
 
       const response = await axios.get(url, {
@@ -241,96 +249,307 @@ const Milestone = ({projectData}) => {
     setCurrentPage(1);
   };
 
-  const thead = () => [
-    { data: "id" },
-    { data: "Branch Code" },
-    { data: "Milestone Name" },
-    { data: "Duration Days" },
-    // { data: "Base Amount" },
-    // { data: "Total Amount" },
 
-    { data: "Milestone Status" },
-    { data: "Total Task" },
-    { data: "Archivedtask" },
-    { data: "Total Duration" },
-    { data: "Status" },
-    { data: "Actions", className: "text-center" },
+  const columns = [
+    { key: "id", label: "ID" },
+    { key: "branchcode", label: "Branch Code" },
+    { key: "miles_title", label: "Milestone Name" },
+    { key: "duration_days", label: "Duration Days" },
+    { key: "isrevised", label: "Milestone Status" },
+    { key: "totaltask_count", label: "Total Task" },
+    { key: "archivedtask_count", label: "Archived Task" },
+    { key: "totalprojectworkinghrsduration", label: "Total Duration" },
+    { key: "status", label: "Status" },
+    { key: "actions", label: "Actions", sortable: false, filterable: false, className: "text-center" },
   ];
 
-  const tbody = () => {
+  // --- Handle Sorting ---
+  const handleSort = (key) => {
+    if (sortConfig.key === key) {
+      setSortConfig({
+        key,
+        direction: sortConfig.direction === "asc" ? "desc" : "asc",
+      });
+    } else {
+      setSortConfig({ key, direction: "asc" });
+    }
+  };
+
+  // --- Handle Filter Change ---
+  const handleFilterChange = (key, value) => {
+    setColumnFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // --- Filtered & Sorted Data ---
+  const processedData = useMemo(() => {
     if (!data) return [];
 
-    return data.map((branch, index) => ({
-      id: branch.id,
-      data: [
-        { data: index + 1 },
+    let filtered = data.filter((branch) =>
+      columns.every((col) => {
+        if (col.filterable === false || !columnFilters[col.key]) return true;
 
-        { data: branch.branchcode },
-        { data: branch.miles_title },
-        { data: branch.duration_days },
-        // { data: branch.base_amount },
-        // { data: branch.total_amount },
+        let value = branch[col.key];
 
-        {
-          data: (
-            <div
-              className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${branch.isrevised === false ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full mr-2 ${branch.isrevised === false ? "bg-green-800" : "bg-red-700"}`}
-              ></span>
-              {branch.isrevised === false ? "No Revision" : "Revision"}
-            </div>
-          ),
-        },
-        { data: branch.totaltask_count },
-        { data: branch.archivedtask_count },
-        { data: branch.totalprojectworkinghrsduration },
-        {
-          data: (
-            <div
-              className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${branch.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full mr-2 ${branch.status === "active" ? "bg-green-800" : "bg-red-700"}`}
-              ></span>
-              {branch.status.charAt(0).toUpperCase() + branch.status.slice(1)}
-            </div>
-          ),
-        },
-        {
-          data: (
-            <div className="flex  justify-center gap-2">
-              <Link to={`/milestone/${branch.milestone_code}`}>
-                <button
-                  className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
-                  title="View"
-                >
-                  <Eye size={18} />
-                </button>
-              </Link>
-              
-              <button
-                className="p-1  text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
-                onClick={() => handleEditBranch(branch)}
-                title="Edit"
-              >
-                <SquarePen size={18} />
-              </button>
-              <button
-                className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
-                onClick={() => handleDeleteBranch(branch)}
-                title="Delete"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ),
-          className: "action-cell",
-        },
-      ],
+        // Special handling for Milestone Status & Status badges
+        if (col.key === "isrevised") {
+          value = branch.isrevised ? "Revision" : "No Revision";
+        }
+        if (col.key === "status") {
+          value = branch.status;
+        }
+
+        if (value === null || value === undefined) value = "";
+
+        return value.toString().toLowerCase().includes(columnFilters[col.key].toLowerCase());
+      })
+    );
+
+    // Sort
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        let valA = a[sortConfig.key];
+        let valB = b[sortConfig.key];
+
+        if (sortConfig.key === "isrevised") {
+          valA = a.isrevised ? "Revision" : "No Revision";
+          valB = b.isrevised ? "Revision" : "No Revision";
+        }
+        if (sortConfig.key === "status") {
+          valA = a.status;
+          valB = b.status;
+        }
+
+        if (typeof valA === "number" && typeof valB === "number") {
+          return sortConfig.direction === "asc" ? valA - valB : valB - valA;
+        } else {
+          return sortConfig.direction === "asc"
+            ? valA.toString().localeCompare(valB.toString())
+            : valB.toString().localeCompare(valA.toString());
+        }
+      });
+    }
+
+    return filtered;
+  }, [data, columnFilters, sortConfig]);
+
+  // --- Render Table Head ---
+  const thead = () =>
+    columns.map((col) => ({
+      data: (
+        <div className="flex flex-col">
+          <span
+            className={`cursor-pointer ${col.className || ""}`}
+            onClick={() => col.sortable !== false && handleSort(col.key)}
+          >
+            {col.label}
+            {sortConfig.key === col.key &&
+              (sortConfig.direction === "asc" ? " 🔼" : " 🔽")}
+          </span>
+          {col.filterable !== false && (
+            <input
+              type="text"
+              placeholder={`Search ${col.label}`}
+              value={columnFilters[col.key] || ""}
+              onChange={(e) => handleFilterChange(col.key, e.target.value)}
+              className="w-full text-xs border rounded px-1 py-0.5 mt-1"
+            />
+          )}
+        </div>
+      ),
+      className: col.className,
     }));
+
+  // --- Render Table Body ---
+  const tbody = () => {
+    if (!processedData) return [];
+
+    return processedData.map((branch, index) => {
+      const viewUrl = `/milestone/${encodeURIComponent(branch.milestone_code)}`;
+
+      return {
+        data: [
+          { data: index + 1 },
+          { data: branch.branchcode },
+          { data: branch.miles_title },
+          { data: branch.duration_days },
+          {
+            data: (
+              <div
+                className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+                  branch.isrevised === false ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full mr-2 ${
+                    branch.isrevised === false ? "bg-green-800" : "bg-red-700"
+                  }`}
+                ></span>
+                {branch.isrevised === false ? "No Revision" : "Revision"}
+              </div>
+            ),
+          },
+          { data: branch.totaltask_count },
+          { data: branch.archivedtask_count },
+          { data: branch.totalprojectworkinghrsduration },
+          {
+            data: (
+              <div
+                className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+                  branch.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full mr-2 ${
+                    branch.status === "active" ? "bg-green-800" : "bg-red-700"
+                  }`}
+                ></span>
+                {branch.status.charAt(0).toUpperCase() + branch.status.slice(1)}
+              </div>
+            ),
+          },
+          {
+            data: (
+              <div className="flex justify-center gap-2">
+                <Link to={viewUrl}>
+                  <button className="p-1 text-blue-700" title="View">
+                    <Eye size={18} />
+                  </button>
+                </Link>
+                <button
+                  className="p-1 text-blue-700"
+                  onClick={() => handleEditBranch(branch)}
+                  title="Edit"
+                >
+                  <SquarePen size={18} />
+                </button>
+                <button
+                  className="p-1 text-red-600"
+                  onClick={() => handleDeleteBranch(branch)}
+                  title="Delete"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            ),
+            className: "action-cell",
+          },
+        ].map((col, idx) => ({
+          ...col,
+          data:
+            idx === 9 ? (
+              col.data
+            ) : (
+              <div
+                onDoubleClick={() => navigate(viewUrl)}
+                className="w-full h-full cursor-pointer"
+              >
+                {col.data}
+              </div>
+            ),
+        })),
+      };
+    });
   };
+
+
+
+
+
+
+
+
+
+
+  // const thead = () => [
+  //   { data: "id" },
+  //   { data: "Branch Code" },
+  //   { data: "Milestone Name" },
+  //   { data: "Duration Days" },
+  //   // { data: "Base Amount" },
+  //   // { data: "Total Amount" },
+
+  //   { data: "Milestone Status" },
+  //   { data: "Total Task" },
+  //   { data: "Archivedtask" },
+  //   { data: "Total Duration" },
+  //   { data: "Status" },
+  //   { data: "Actions", className: "text-center" },
+  // ];
+
+  // const tbody = () => {
+  //   if (!data) return [];
+
+  //   return data.map((branch, index) => ({
+  //     id: branch.id,
+  //     data: [
+  //       { data: index + 1 },
+
+  //       { data: branch.branchcode },
+  //       { data: branch.miles_title },
+  //       { data: branch.duration_days },
+  //       // { data: branch.base_amount },
+  //       // { data: branch.total_amount },
+
+  //       {
+  //         data: (
+  //           <div
+  //             className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${branch.isrevised === false ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+  //           >
+  //             <span
+  //               className={`w-2 h-2 rounded-full mr-2 ${branch.isrevised === false ? "bg-green-800" : "bg-red-700"}`}
+  //             ></span>
+  //             {branch.isrevised === false ? "No Revision" : "Revision"}
+  //           </div>
+  //         ),
+  //       },
+  //       { data: branch.totaltask_count },
+  //       { data: branch.archivedtask_count },
+  //       { data: branch.totalprojectworkinghrsduration },
+  //       {
+  //         data: (
+  //           <div
+  //             className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${branch.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+  //           >
+  //             <span
+  //               className={`w-2 h-2 rounded-full mr-2 ${branch.status === "active" ? "bg-green-800" : "bg-red-700"}`}
+  //             ></span>
+  //             {branch.status.charAt(0).toUpperCase() + branch.status.slice(1)}
+  //           </div>
+  //         ),
+  //       },
+  //       {
+  //         data: (
+  //           <div className="flex  justify-center gap-2">
+  //             <Link to={`/milestone/${encodeURIComponent(branch.milestone_code)}`}>
+  //               <button
+  //                 className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //                 title="View"
+  //               >
+  //                 <Eye size={18} />
+  //               </button>
+  //             </Link>
+              
+  //             <button
+  //               className="p-1  text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleEditBranch(branch)}
+  //               title="Edit"
+  //             >
+  //               <SquarePen size={18} />
+  //             </button>
+  //             <button
+  //               className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleDeleteBranch(branch)}
+  //               title="Delete"
+  //             >
+  //               <Trash2 size={18} />
+  //             </button>
+  //           </div>
+  //         ),
+  //         className: "action-cell",
+  //       },
+  //     ],
+  //   }));
+  // };
 
   const handleEditSuccess = () => {
     setShowEditModal(false);
@@ -474,6 +693,8 @@ const Milestone = ({projectData}) => {
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Add New Milestone"
+        closeOnOutsideClick={false}
+
       >
         <AddMilestone
         project={projectData}
@@ -488,6 +709,7 @@ const Milestone = ({projectData}) => {
         className="w-full md:w-[800px]"
         onClose={() => setShowEditModal(false)}
         title="Edit Milestone"
+        closeOnOutsideClick={false}
       >
         <EditMilestoneForm
         project={projectData}
@@ -502,6 +724,7 @@ const Milestone = ({projectData}) => {
         className="w-full md:w-[600px]"
         onClose={() => setShowDeleteModal(false)}
         title="Drop Milestone"
+        closeOnOutsideClick={false}
       >
         <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
           <div className="space-y-4">

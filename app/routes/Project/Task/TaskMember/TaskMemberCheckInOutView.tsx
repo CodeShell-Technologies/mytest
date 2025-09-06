@@ -507,6 +507,7 @@ const TaskMemberViewPage = () => {
               className="w-full md:w-[800px]"
               onClose={() => setShowMeetingModal(false)}
               title="Create Meeting"
+              closeOnOutsideClick={false}
             >
               <TaskMemberMeetingForm
                 memberData={memberData}

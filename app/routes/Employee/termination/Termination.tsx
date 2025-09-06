@@ -171,7 +171,10 @@ const Termination = () => {
         <div className="text-center py-4">Loading...</div>
       ) : (
         <div className="overflow-x-auto mt-4">
-          <DataTable thead={thead} tbody={tbody} />
+          <DataTable thead={thead} tbody={tbody} enableFilters={true}
+  enableSorting={true}
+
+/>
         </div>
       )}
 
@@ -181,6 +184,7 @@ const Termination = () => {
         onClose={() => setShowForm(false)}
         title="Create Termination"
         className="w-full max-w-3xl"
+          closeOnOutsideClick={false}
       >
         <AddTerminationForm
           onCancel={() => setShowForm(false)}

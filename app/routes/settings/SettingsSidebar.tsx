@@ -52,18 +52,32 @@ const SettingsSidebar = () => {
               >
                 User Roles
               </NavLink>
+              
               <NavLink
-                to="/settings/access-permission/teams"
+                to="/team"
                 className={({ isActive }) => `block px-3 py-2 text-sm rounded-sm ${isActive ? 'bg-gray-200 text-red-700  dark:bg-gray-500/30 dark:text-red-500' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}
               >
                 Teams
+              </NavLink>
+                            <NavLink
+                to="/settings/access-permission/departments"
+                className={({ isActive }) => `block px-3 py-2 text-sm rounded-sm ${isActive ? 'bg-gray-200 text-red-700  dark:bg-gray-500/30 dark:text-red-500' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}
+              >
+                Departments
+              </NavLink>
+
+                                          <NavLink
+                to="/settings/access-permission/designations"
+                className={({ isActive }) => `block px-3 py-2 text-sm rounded-sm ${isActive ? 'bg-gray-200 text-red-700  dark:bg-gray-500/30 dark:text-red-500' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}
+              >
+                Designations
               </NavLink>
             </div>
           )}
         </div>
 
         {/* Invoice Dropdown */}
-        <div className="mb-1">
+        {/*<div className="mb-1">
           <button
             onClick={() => toggleDropdown('invoice')}
             className={`w-full flex items-center justify-between p-2 rounded-md ${openDropdowns.invoice ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
@@ -92,7 +106,7 @@ const SettingsSidebar = () => {
               </NavLink>
             </div>
           )}
-        </div>
+        </div>*/}
         <div className="mb-1">
           <button
             onClick={() => toggleDropdown('system')}

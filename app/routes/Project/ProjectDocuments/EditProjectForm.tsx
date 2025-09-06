@@ -27,6 +27,10 @@ import useEmployeeStore from "src/stores/useEmployeeStore";
 import { BASE_URL, toastposition } from "~/constants/api";
 import { useStaffFilter } from "~/routes/hooks/UseStaffFilter";
 
+import AsyncSelect from "react-select/async";
+
+import { useLocation } from "react-router-dom";
+
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -41,7 +45,27 @@ const EditProjectForm = ({ project,onSuccess, onCancel }) => {
     (state) => state.campaigncodeOptions
   );
 
+
+      const [campaignOptions, setCampaignOptions] = useState([]);
+  const [clientOptions, setClientOptions] = useState([]);
+  const [isFetchingCampaigns, setIsFetchingCampaigns] = useState(false);
+  const [isFetchingClients, setIsFetchingClients] = useState(false);
+
+
   const [selectedDepartments, setSelectedDepartments] = useState('');
+
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
+  const [departmentDesignations, setDepartmentDesignations] = useState<
+    Record<string, string[]>
+  >({});
+  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+
+  const [staffOptions, setStaffOptions] = useState<{ value: string; label: string }[]>([]);
+  const [isFetchingStaff, setIsFetchingStaff] = useState(false);
+
+
+
 
 
 
@@ -71,6 +95,7 @@ const EditProjectForm = ({ project,onSuccess, onCancel }) => {
     handler_to: "",
     notes: "",
     status: "draft",
+    department:"",
   });
  useEffect(() => {
     if (project) {
@@ -90,15 +115,16 @@ const EditProjectForm = ({ project,onSuccess, onCancel }) => {
           handler_to: project.handler_to || "",
           notes: project.notes || "",
           status: project.status || "",
+          department:project.handler_department || "",
       });
     }
   }, [project]);
    const {
-      departmentOptions,
+      // departmentOptions,
       selectedDepartment,
 
-      staffOptions,
-      isFetchingStaff,
+      // staffOptions,
+      // isFetchingStaff,
       handleDepartmentChange,
     } = useStaffFilter(formData.branchcode);
   const handleChange = (e) => {
@@ -109,10 +135,29 @@ const EditProjectForm = ({ project,onSuccess, onCancel }) => {
     }));
   };
 
+
+    useEffect(() => {
+    if (formData.branchcode) {
+      fetchCampaignOptions(formData.branchcode);
+      fetchClientOptions(formData.branchcode);
+    
+    } else {
+      setCampaignOptions([]);
+      setClientOptions([]);
+      
+    }
+  }, [formData.branchcode]);
+
+
+
+
+
+
+
 useEffect(() => {
   if (formData.handler_by) {
     const encodedId = encodeURIComponent(formData.handler_by); // Handles 02/01 as 02%2F01
-    fetch(`http://localhost:3000/api/get-staff-department/${encodedId}`)
+    fetch(`${BASE_URL}/get-staff-department/${encodedId}`)
       .then((res) => res.json())
       .then((data) => {
         if (data && data.department) {
@@ -121,6 +166,178 @@ useEffect(() => {
       });
   }
 }, [formData.handler_by]);
+
+
+      const fetchCampaignOptions = async (branchcode) => {
+    setIsFetchingCampaigns(true);
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/campaign/overview/dropdown?branchcode=${branchcode}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data && response.data.data) {
+        const options = response.data.data.map((campaign) => ({
+          value: campaign.campaign_code,
+          label: campaign.campaignname,
+        }));
+        setCampaignOptions(options);
+      } else {
+        setCampaignOptions([]);
+      }
+    } catch (err) {
+      toast.error("Failed to fetch campaign options");
+      setCampaignOptions([]);
+    } finally {
+      setIsFetchingCampaigns(false);
+    }
+  };
+
+
+
+
+
+
+  const fetchClientOptions = async (branchcode) => {
+    setIsFetchingClients(true);
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/client/overview/dropdown?branchcode=${branchcode}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data && response.data.data) {
+        const options = response.data.data.map((client) => ({
+          value: client.client_code,
+          label: `${client.client_name} (${client.client_code})`,
+        }));
+        setClientOptions(options);
+      } else {
+        setClientOptions([]);
+      }
+    } catch (err) {
+      toast.error("Failed to fetch client options");
+      setClientOptions([]);
+    } finally {
+      setIsFetchingClients(false);
+    }
+  };
+
+  // const handleChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     [name]: value,
+  //   }));
+  // };
+
+    useEffect(() => {
+  async function fetchData() {
+    try {
+      if (!formData.branchcode) return; // ✅ prevent empty requests
+
+      const [deptRes, desigRes] = await Promise.all([
+        fetch(
+          `${BASE_URL}/getDepartments?branch_code=${encodeURIComponent(
+            formData.branchcode
+          )}`
+        ),
+        fetch(`${BASE_URL}/getDesignations`),
+      ]);
+
+      const deptData = await deptRes.json();
+      const desigData = await desigRes.json();
+
+      // set full dept list
+      setDepartments(deptData.data);
+
+      // ✅ Department options converted to {value, label}
+      const deptNames = deptData.data
+        .map((d: Department) => d.name)
+        .filter(Boolean)
+        .map((name: string) => ({ value: name, label: name }));
+
+      setDepartmentOptions(deptNames);
+
+      // Build mapping { departmentName: [{value, label}, {value, label}] }
+      const deptDesigs: Record<string, { value: string; label: string }[]> = {};
+      desigData.data.forEach((item: Designation) => {
+        const dept = item.department;
+        if (!deptDesigs[dept]) {
+          deptDesigs[dept] = [];
+        }
+        deptDesigs[dept].push({
+          value: item.designation,
+          label: item.designation,
+        });
+      });
+      setDepartmentDesignations(deptDesigs);
+    } catch (err) {
+      console.error("Error fetching data", err);
+    }
+  }
+
+  fetchData();
+}, [formData.branchcode]);
+
+      useEffect(() => {
+  async function fetchStaff() {
+    if (!formData.department) {
+      setStaffOptions([]);
+      return;
+    }
+
+    setIsFetchingStaff(true);
+    try {
+      const res = await fetch(`${BASE_URL}/getStaff?department=${encodeURIComponent(formData.department)}`);
+      const data = await res.json();
+
+      if (data?.status && Array.isArray(data.data)) {
+        const options = data.data.map((staff: any) => ({
+          value: staff.staff_id,  // unique id (e.g. "BRCODE_01/02")
+          label: `${staff.firstname} ${staff.lastname} (${staff.staff_id})`, // display name
+        }));
+        setStaffOptions(options);
+      } else {
+        setStaffOptions([]);
+      }
+    } catch (err) {
+      console.error("Error fetching staff:", err);
+      setStaffOptions([]);
+    } finally {
+      setIsFetchingStaff(false);
+    }
+  }
+
+  fetchStaff();
+}, [formData.department]);
+
+
+
+ const loadOptions = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = clientOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+   const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = staffOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+
+
+      const loadDeps = (inputValue: string, callback: (options: Option[]) => void) => {
+  const filtered = departmentOptions.filter((c) =>
+    c.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
+  callback(filtered);
+};
+
 
 
 
@@ -176,6 +393,93 @@ useEffect(() => {
     }
   };
 
+
+
+    useEffect(() => {
+    async function fetchData() {
+      try {
+        const [deptRes, desigRes] = await Promise.all([
+          fetch(`${BASE_URL}/getDepartments`),
+          fetch(`${BASE_URL}/getDesignations`),
+        ]);
+
+        const deptData = await deptRes.json();
+        const desigData = await desigRes.json();
+
+        // set full dept list
+        setDepartments(deptData.data);
+
+        // Department options (names only)
+        const deptNames = deptData.data.map((d: Department) => d.name).filter(Boolean);
+        setDepartmentOptions(deptNames);
+
+        // Build mapping { departmentName: [designation1, designation2] }
+        const deptDesigs: Record<string, string[]> = {};
+        desigData.data.forEach((item: Designation) => {
+          const dept = item.department;
+          if (!deptDesigs[dept]) {
+            deptDesigs[dept] = [];
+          }
+          deptDesigs[dept].push(item.designation);
+        });
+        setDepartmentDesignations(deptDesigs);
+      } catch (err) {
+        console.error("Error fetching data", err);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  // ✅ Update designation options when department changes
+  useEffect(() => {
+    if (formData.department) {
+      setDesignationOptions(departmentDesignations[formData.department] || []);
+    } else {
+      setDesignationOptions([]);
+    }
+  }, [formData.department, departmentDesignations]);
+
+
+    useEffect(() => {
+  async function fetchStaff() {
+    if (!formData.department) {
+      setStaffOptions([]);
+      return;
+    }
+
+    setIsFetchingStaff(true);
+    try {
+      const res = await fetch(`${BASE_URL}/getStaff?department=${encodeURIComponent(formData.department)}`);
+      const data = await res.json();
+
+      if (data?.status && Array.isArray(data.data)) {
+        const options = data.data.map((staff: any) => ({
+          value: staff.staff_id,  // unique id (e.g. "BRCODE_01/02")
+          label: `${staff.firstname} ${staff.lastname} (${staff.designation})`, // display name
+        }));
+        setStaffOptions(options);
+      } else {
+        setStaffOptions([]);
+      }
+    } catch (err) {
+      console.error("Error fetching staff:", err);
+      setStaffOptions([]);
+    } finally {
+      setIsFetchingStaff(false);
+    }
+  }
+
+  fetchStaff();
+}, [formData.department]);
+
+
+
+
+
+
+
+
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
       <Toaster position={toastposition} />
@@ -230,13 +534,29 @@ useEffect(() => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Briefcase className="inline mr-1" size={14} /> Client Code
             </p>
-            <input
+{/*            <input
               name="client_code"
               value={formData.client_code}
               onChange={handleChange}
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
               readOnly
-            />
+            />*/}
+
+
+              <AsyncSelect
+          cacheOptions
+          name="client_code"
+          defaultOptions={clientOptions}
+          loadOptions={loadOptions}
+          onChange={(selected: Option | null) =>
+            setFormData({ ...formData, client_code: selected ? selected.value : "" })
+          }
+          value={clientOptions.find((opt) => opt.value === formData.client_code) || null}
+          isDisabled={!formData.branchcode || clientOptions.length === 0}
+          placeholder="Select or search client"
+        />
+
+
               {/* <option value="">Select Client</option>
               {clientcodeOptions?.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -339,7 +659,7 @@ useEffect(() => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Building className="inline mr-1" size={14} /> Department
             </p>
-            <select
+            {/*<select
               value={selectedDepartment}
               onChange={(e) => {
                 handleDepartmentChange(e.target.value);
@@ -358,7 +678,48 @@ useEffect(() => {
                   {dept}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+                    {/*  <select
+          name="department"
+          value={selectedDepartment}
+          onChange={handleChange}
+          className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+          required
+        >
+          <option value="">{selectedDepartments || 'N/A'}</option>
+          {departmentOptions.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
+          ))}
+        </select>*/}
+
+
+                       <AsyncSelect
+  cacheOptions
+  defaultOptions={departmentOptions}
+  name="department"
+  loadOptions={(inputValue, callback) => {
+    const filtered = departmentOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  }}
+  onChange={(selected: Option | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      department: selected ? selected.value : "",
+    }));
+  }}
+  value={
+    departmentOptions.find((opt) => opt.value === formData.department) || null
+  }
+  placeholder="Select or search department"
+/>
+
+
+
           </div>
 
           {/* Handler By */}
@@ -366,7 +727,7 @@ useEffect(() => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <User className="inline mr-1" size={14} /> Handler By
             </p>
-            {isFetchingStaff ? (
+            {/*{isFetchingStaff ? (
               <div className="text-sm text-gray-500 mt-1">Loading staff...</div>
             ) : (
               <select
@@ -387,8 +748,31 @@ useEffect(() => {
             )}
             {selectedDepartment && staffOptions.length === 0 && !isFetchingStaff && (
               <div className="text-xs text-gray-500 mt-1">No staff found in this department</div>
+            )}*/}
+               {isFetchingStaff ? (
+    <div className="text-sm text-gray-500 mt-1">Loading staff...</div>
+  ) : (
+    <select
+      name="handler_by"
+      value={formData.handler_by}
+      onChange={handleChange}
+      className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+      required
+      disabled={!formData.department || staffOptions.length === 0}
+    >
+      <option value={formData.handler_by}>{formData.handler_by}</option>
+      {staffOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+       </select>
+  )}
+            {selectedDepartment && staffOptions.length === 0 && !isFetchingStaff && (
+              <div className="text-xs text-gray-500 mt-1">No staff found in this department</div>
             )}
           </div>
+
 
           
           {/* <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">

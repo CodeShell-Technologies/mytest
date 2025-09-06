@@ -39,7 +39,7 @@ const ProjectOverview = () => {
     const fetchProjectData = async () => {
       try {
         const response = await axios.get(
-          `${BASE_URL}/project/overview/profile/read?project_code=${id}`,
+          `${BASE_URL}/project/overview/profile/read?project_code=${encodeURIComponent(id)}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

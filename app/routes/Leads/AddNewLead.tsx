@@ -22,6 +22,8 @@ import useEmployeeStore from "src/stores/useEmployeeStore";
 import { BASE_URL, toastposition } from "~/constants/api";
 import { useStaffFilter } from "../../routes/hooks/UseStaffFilter";
 
+import AsyncSelect from "react-select/async";
+
 
 const AddNewLeadForm = ({ onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
@@ -29,11 +31,27 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
   const [campaignOptions, setCampaignOptions] = useState([]);
   const [isFetchingCampaigns, setIsFetchingCampaigns] = useState(false);
 
+
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
+  const [departmentDesignations, setDepartmentDesignations] = useState<
+    Record<string, string[]>
+  >({});
+  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+
+
+
+
   const token = useAuthStore((state) => state.accessToken);
   const permissions = useAuthStore((state) => state.permissions);
   const userRole = permissions[0].role;
   const branchCode = useBranchStore((state) => state.branchCodeOptions);
   const branchcodeForNor = useAuthStore((state) => state.branchcode);
+
+  const [staffOptions, setStaffOptions] = useState<{ value: string; label: string }[]>([]);
+  const [isFetchingStaff, setIsFetchingStaff] = useState(false);
+
+
   const branchCodeOption =
     userRole === "superadmin"
       ? branchCode
@@ -55,10 +73,10 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
     summary: "",
   });
   const {
-    departmentOptions,
+    // departmentOptions,
     selectedDepartment,
-    staffOptions,
-    isFetchingStaff,
+    // staffOptions,
+    // isFetchingStaff,
     handleDepartmentChange,
   } = useStaffFilter( formData.branchcode);
   useEffect(() => {
@@ -140,6 +158,165 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
     }
   };
 
+  //       useEffect(() => {
+  //   async function fetchData() {
+  //     try {
+  //       const [deptRes, desigRes] = await Promise.all([
+  //         fetch("http://localhost:3000/api/getDepartments?branch_code="),
+  //         fetch("http://localhost:3000/api/getDesignations"),
+  //       ]);
+
+  //       const deptData = await deptRes.json();
+  //       const desigData = await desigRes.json();
+
+  //       // set full dept list
+  //       setDepartments(deptData.data);
+
+  //       // Department options (names only)
+  //       const deptNames = deptData.data.map((d: Department) => d.name).filter(Boolean);
+  //       setDepartmentOptions(deptNames);
+
+  //       // Build mapping { departmentName: [designation1, designation2] }
+  //       const deptDesigs: Record<string, string[]> = {};
+  //       desigData.data.forEach((item: Designation) => {
+  //         const dept = item.department;
+  //         if (!deptDesigs[dept]) {
+  //           deptDesigs[dept] = [];
+  //         }
+  //         deptDesigs[dept].push(item.designation);
+  //       });
+  //       setDepartmentDesignations(deptDesigs);
+  //     } catch (err) {
+  //       console.error("Error fetching data", err);
+  //     }
+  //   }
+
+  //   fetchData();
+  // }, [formData.branchcode]);
+
+useEffect(() => {
+  async function fetchData() {
+    try {
+      if (!formData.branchcode) return; // ✅ prevent empty requests
+
+      const [deptRes, desigRes] = await Promise.all([
+        fetch(
+          `${BASE_URL}/getDepartments?branch_code=${encodeURIComponent(
+            formData.branchcode
+          )}`
+        ),
+        fetch(`${BASE_URL}/getDesignations`),
+      ]);
+
+      const deptData = await deptRes.json();
+      const desigData = await desigRes.json();
+
+      // set full dept list
+      setDepartments(deptData.data);
+
+      // ✅ Department options converted to {value, label}
+      const deptNames = deptData.data
+        .map((d: Department) => d.name)
+        .filter(Boolean)
+        .map((name: string) => ({ value: name, label: name }));
+
+      setDepartmentOptions(deptNames);
+
+      // Build mapping { departmentName: [{value, label}, {value, label}] }
+      const deptDesigs: Record<string, { value: string; label: string }[]> = {};
+      desigData.data.forEach((item: Designation) => {
+        const dept = item.department;
+        if (!deptDesigs[dept]) {
+          deptDesigs[dept] = [];
+        }
+        deptDesigs[dept].push({
+          value: item.designation,
+          label: item.designation,
+        });
+      });
+      setDepartmentDesignations(deptDesigs);
+    } catch (err) {
+      console.error("Error fetching data", err);
+    }
+  }
+
+  fetchData();
+}, [formData.branchcode]);
+
+
+  // ✅ Update designation options when department changes
+  useEffect(() => {
+    if (formData.department) {
+      setDesignationOptions(departmentDesignations[formData.department] || []);
+    } else {
+      setDesignationOptions([]);
+    }
+  }, [formData.department, departmentDesignations]);
+
+
+useEffect(() => {
+  async function fetchStaff() {
+    if (!formData.department) {
+      setStaffOptions([]);
+      return;
+    }
+
+    setIsFetchingStaff(true);
+    try {
+      const res = await fetch(`${BASE_URL}/getStaff?department=${encodeURIComponent(formData.department)}`);
+      const data = await res.json();
+
+      if (data?.status && Array.isArray(data.data)) {
+        const options = data.data.map((staff: any) => ({
+          value: staff.staff_id,  // unique id (e.g. "BRCODE_01/02")
+          label: `${staff.firstname} ${staff.lastname} (${staff.staff_id})`, // display name
+        }));
+        setStaffOptions(options);
+      } else {
+        setStaffOptions([]);
+      }
+    } catch (err) {
+      console.error("Error fetching staff:", err);
+      setStaffOptions([]);
+    } finally {
+      setIsFetchingStaff(false);
+    }
+  }
+
+  fetchStaff();
+}, [formData.department]);
+
+
+        const loadBranches = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = branchCodeOption.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+        const loadCamps = (inputValue: string, callback: (options: Option[]) => void) => {
+  const filtered = campaignOptions.filter((c) =>
+    c.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
+  callback(filtered);
+};
+
+      const loadDeps = (inputValue: string, callback: (options: Option[]) => void) => {
+  const filtered = departmentOptions.filter((c) =>
+    c.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
+  callback(filtered);
+};
+
+
+     const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = staffOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
       <Toaster position={toastposition} />
@@ -153,7 +330,7 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Hash className="inline mr-1" size={14} /> Branch Code <span className="text-red-700 text-lg m-2">*</span>
             </p>
-            <select
+            {/*<select
               name="branchcode"
               value={formData.branchcode}
               onChange={handleChange}
@@ -166,7 +343,25 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+
+<AsyncSelect
+  cacheOptions
+  defaultOptions={branchCodeOption}
+  name="branchcode"
+  loadOptions={loadBranches}
+  value={
+    branchCodeOption.find((opt) => opt.value === formData.branchcode) || null
+  }
+  onChange={(selected: Option | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      branchcode: selected ? selected.value : "",
+    }));
+  }}
+  placeholder="Select or search branch"
+/>
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
@@ -178,21 +373,42 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
                 Loading campaigns...
               </div>
             ) : (
-              <select
-                name="campaign_code"
-                value={formData.campaign_code}
-                onChange={handleChange}
-                className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-                required
-                disabled={!formData.branchcode || campaignOptions.length === 0}
-              >
-                <option value="">Select Campaign</option>
-                {campaignOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              // <select
+              //   name="campaign_code"
+              //   value={formData.campaign_code}
+              //   onChange={handleChange}
+              //   className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+              //   required
+              //   disabled={!formData.branchcode || campaignOptions.length === 0}
+              // >
+              //   <option value="">Select Campaign</option>
+              //   {campaignOptions.map((option) => (
+              //     <option key={option.value} value={option.value}>
+              //       {option.label}
+              //     </option>
+              //   ))}
+              // </select>
+
+
+                     <AsyncSelect
+  cacheOptions
+  defaultOptions={campaignOptions} // must be [{ value, label }]
+  name="campaign_code"
+  loadOptions={loadCamps}
+  onChange={(selected: Option | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      campaign_code: selected ? selected.value : "",
+    }));
+  }}
+  value={
+    campaignOptions.find((opt) => opt.value === formData.campaign_code) || null
+  }
+  placeholder="Select or search campaigns"
+/>
+
+
+
             )}
             {formData.branchcode &&
               campaignOptions.length === 0 &&
@@ -264,7 +480,7 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Building className="inline mr-1" size={14} /> Department <span className="text-red-700 text-lg m-2">*</span>
             </p>
-            <select
+            {/*<select
               value={selectedDepartment}
               onChange={(e) => {
                 handleDepartmentChange(e.target.value);
@@ -279,10 +495,51 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
                   {dept}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+{/*               <select
+          name="department"
+          value={selectedDepartment}
+          onChange={handleChange}
+          className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+          required
+        >
+          <option value="">Select Department</option>
+          {departmentOptions.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
+          ))}
+        </select>*/}
+
+                 <AsyncSelect
+  cacheOptions
+  defaultOptions={departmentOptions}
+  name="department"
+  loadOptions={(inputValue, callback) => {
+    const filtered = departmentOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  }}
+  onChange={(selected: Option | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      department: selected ? selected.value : "",
+    }));
+  }}
+  value={
+    departmentOptions.find((opt) => opt.value === formData.department) || null
+  }
+  placeholder="Select or search department"
+/>
+
+
+
+
           </div>
 
-          <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+          {/*<div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <User className="inline mr-1" size={14} /> Assigned To <span className="text-red-700 text-lg m-2">*</span>
             </p>
@@ -312,7 +569,59 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
                   No staff found in this department
                 </div>
               )}
-          </div>
+          </div>*/}
+
+
+
+            <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border">
+  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+    <User className="inline mr-1" size={14} /> Assigned To <span className="text-red-700 text-lg m-2">*</span>
+  </p>
+  {isFetchingStaff ? (
+    <div className="text-sm text-gray-500 mt-1">Loading staff...</div>
+  ) : (
+    // <select
+    //   name="assignee_id"
+    //   value={formData.assignee_id}
+    //   onChange={handleChange}
+    //   className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    //   required
+    //   disabled={!formData.department || staffOptions.length === 0}
+    // >
+    //   <option value="">Select Staff</option>
+    //   {staffOptions.map((option) => (
+    //     <option key={option.value} value={option.value}>
+    //       {option.label}
+    //     </option>
+    //   ))}
+    // </select>
+
+      <AsyncSelect
+          cacheOptions
+          defaultOptions={staffOptions}
+          name="assignee_id"
+          loadOptions={loadStaffs}
+          onChange={(selected: Option | null) =>
+            setFormData({ ...formData, assignee_id: selected ? selected.value : "" })
+          }
+          value={staffOptions.find((opt) => opt.value === formData.assignee_id) || null}
+          isDisabled={!formData.department || staffOptions.length === 0}
+          placeholder="Select or search staff"
+        />
+
+
+
+  )}
+  {formData.department && staffOptions.length === 0 && !isFetchingStaff && (
+    <div className="text-xs text-gray-500 mt-1">
+      No staff found in this department
+    </div>
+  )}
+</div>
+
+
+
+
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Tag className="inline mr-1" size={14} /> Communication Type 

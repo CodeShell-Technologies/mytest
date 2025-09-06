@@ -38,7 +38,7 @@ export const navbarLinks = [
     title: "Branch Management",
     links: [
       {
-        label: "Branch",
+        label: "Branches",
         icon: Split,
         path: "/branch",
       },
@@ -84,7 +84,7 @@ export const navbarLinks = [
         path: "/leads",
       },
       {
-        label: "Clients",
+        label: "Client",
         icon: Briefcase,
         path: "/client",
       },
@@ -110,7 +110,7 @@ export const navbarLinks = [
         path: "/project",
       },
           {
-        label: "Tasks",
+        label: "Task",
         icon: CircleCheckBig,
         path: "/project_tasklist",
       },

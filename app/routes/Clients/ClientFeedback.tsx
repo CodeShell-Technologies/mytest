@@ -128,12 +128,7 @@ rating:3
                   <FileDown />
                   Export Excel
                 </button>
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="text-white text-xs bg-red-700 focus:outline-non font-medium rounded px-3 py-2.5 text-center mr-5 mb-5 flex items-center"
-                >
-                  + Add MOM
-                </button>
+               
               </div>
 
               <div className="flex justify-between">

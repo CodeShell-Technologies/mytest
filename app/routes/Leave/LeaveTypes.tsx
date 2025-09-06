@@ -364,6 +364,9 @@ const LeaveTypes = () => {
                 tbody={tbody}
                 responsive={true}
                 className="min-w-[50%]"
+                enableFilters={true}
+  enableSorting={true}
+
               />
             </div>
           </div>
@@ -385,6 +388,7 @@ const LeaveTypes = () => {
           className="w-full md:w-[800px]"
           onClose={() => setShowCreateModal(false)}
           title="CREATE NEW LEAVETYPE"
+            closeOnOutsideClick={false}
         >
           <CreateLeaveForm
             onSuccess={handleCreateSuccess}
@@ -397,6 +401,7 @@ const LeaveTypes = () => {
           className="w-full md:w-[800px]"
           onClose={() => setShowEditModal(false)}
           title="EDIT LEAVE TYPE"
+            closeOnOutsideClick={false}
         >
           <EditLeaveForm
             branch={selectedBranch}
@@ -410,6 +415,7 @@ const LeaveTypes = () => {
           className="w-full md:w-[600px]"
           onClose={() => setShowDeleteModal(false)}
           title="DELETE LEAVE TYPE"
+            closeOnOutsideClick={false}
         >
           <div className="flex flex-col gap-6 justify-center items-center">
             <p className="text-gray-500 text-lg font-bold text-center">

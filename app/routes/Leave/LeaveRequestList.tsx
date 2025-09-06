@@ -496,6 +496,9 @@ const LeaveRequestList = () => {
               tbody={tbody}
               responsive={true}
               className="min-w-full"
+              enableFilters={true}
+  enableSorting={true}
+
             />
           </div>
 

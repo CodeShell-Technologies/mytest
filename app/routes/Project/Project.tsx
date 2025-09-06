@@ -602,7 +602,8 @@
 // };
 
 // export default Project;
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import DataTable from "src/component/DataTable";
 import CustomPagination from "src/component/CustomPagination";
 import SearchInput from "src/component/SearchInput";
@@ -662,13 +663,17 @@ const Project = () => {
     delete_type: "",
     status: "",
   });
-  
+  const [roleAccess, setRoleAccess] = useState(null); // ✅ define here
   // New filter states
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [selectedFilterType, setSelectedFilterType] = useState("");
   const [selectedPayStatus, setSelectedPayStatus] = useState("");
 
+
+  const UserRole=useAuthStore((state=>state.role))
+
+  const UserId=useAuthStore((state=>state.staff_id))
   //stores
   const { fetchProject } = useProjectStore();
   const branchcode = useAuthStore((state) => state.branchcode);
@@ -713,6 +718,12 @@ const Project = () => {
     { value: "none", label: "No Payment" },
   ];
 
+  const navigate = useNavigate();
+
+  // --- State for Sorting & Filtering ---
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [columnFilters, setColumnFilters] = useState({});
+
   const pageSizeOptions = [
     { value: 20, label: "20 per page" },
     { value: 40, label: "30 per page" },
@@ -743,10 +754,12 @@ const Project = () => {
     try {
       let url = `${BASE_URL}/project/overview/read?page=${page}&limit=${limit}`;
 
+    	// let url = `${BASE_URL}/getprojectaccess?userRole=${UserRole}&userId=${encodeURIComponent(staff_id)}&useBranchcode=${encodeURIComponent(branchcode)}&page=${page}&limit=${limit}`;
+
       if (search) url += `&search=${search}`;
       if (status) url += `&status=${status}`;
       if (priority) url += `&priority=${priority}`;
-      if (branchCode) url += `&branchcode=${branchCode}`;
+      if (branchCode) url += `&branchcode=${encodeURIComponent(branchCode)}`;
       if (sort) url += `&dec=${sort}`;
       if (filterStartDate) url += `&start_date=${formatDate(filterStartDate)}`;
       if (filterEndDate) url += `&end_date=${formatDate(filterEndDate)}`;
@@ -921,74 +934,250 @@ const Project = () => {
     setCurrentPage(1);
   };
 
-  const thead = () => [
-    { data: "id" },
-    { data: "Branch Code" },
-    { data: "Project_Code" },
-    { data: "Project Name" },
-    { data: "Client_Code" },
-    { data: "Type" },
-    { data: "Budget" },
-    { data: "Duration_Days" },
-    { data: "Status" },
-    { data: "Actions", className: "text-center" },
+
+
+
+  const columns = [
+    { key: "id", label: "ID" },
+    { key: "branchcode", label: "Branch Code" },
+    { key: "project_code", label: "Project Code" },
+    { key: "title", label: "Project Name" },
+    { key: "client_code", label: "Client Code" },
+    { key: "type", label: "Type" },
+    { key: "budget", label: "Budget" },
+    { key: "duration_days", label: "Duration (Days)" },
+    { key: "status", label: "Status" },
+    { key: "actions", label: "Actions", sortable: false, filterable: false, className: "text-center" },
   ];
 
-  const tbody = () => {
-    if (!data) return [];
-
-    return data.map((project, index) => ({
-      id: project.id,
-      data: [
-        { data: index + 1 },
-        { data: project.branchcode },
-        { data: project.project_code },
-        { data: project.title },
-        { data: project.client_code },
-        { data: project.type },
-        { data: project.budget },
-        { data: project.duration_days },
-        {
-          data: (
-            <div
-              className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${project.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full mr-2 ${project.status === "active" ? "bg-green-800" : "bg-red-700"}`}
-              ></span>
-              {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-            </div>
-          ),
-        },
-        {
-          data: (
-            <div className="flex  justify-center gap-2">
-              <Link to={`/project/${project.project_code}`}>
-                <button className=" px-4 py-2 dark:text-blue-600 text-blue-700 rounded-sm">
-                  <Eye className="inline" size={20} />
-                </button>
-              </Link>
-              <button
-                className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
-                onClick={() => handleEditBranch(project)}
-                title="Edit"
-              >
-                <SquarePen size={18} />
-              </button>
-              <button
-                className="p-1 text-red-600 rounded hover:text-gray-500 dark:hover:text-gray-300"
-                onClick={() => handleDeleteBranch(project)}
-                title="Delete"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ),
-          className: "action-cell",
-        },
-      ],
-    }));
+  // --- Handle Sorting ---
+  const handleSort = (key) => {
+    if (sortConfig.key === key) {
+      setSortConfig({
+        key,
+        direction: sortConfig.direction === "asc" ? "desc" : "asc",
+      });
+    } else {
+      setSortConfig({ key, direction: "asc" });
+    }
   };
+
+  // --- Handle Filter Change ---
+  const handleFilterChange = (key, value) => {
+    setColumnFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // --- Filtered & Sorted Data ---
+  const processedData = useMemo(() => {
+  if (!data) return [];
+
+  // Filter
+  let filtered = data.filter((project) =>
+    columns.every((col) => {
+      if (col.filterable === false || !columnFilters[col.key]) return true;
+
+      let value = project[col.key];
+
+      // Convert undefined/null to empty string
+      if (value === null || value === undefined) value = "";
+
+      return value.toString().toLowerCase().includes(columnFilters[col.key].toLowerCase());
+    })
+  );
+
+  // Sort
+  if (sortConfig.key) {
+    filtered.sort((a, b) => {
+      const valA = a[sortConfig.key] ?? "";
+      const valB = b[sortConfig.key] ?? "";
+
+      if (typeof valA === "number" && typeof valB === "number") {
+        return sortConfig.direction === "asc" ? valA - valB : valB - valA;
+      } else {
+        return sortConfig.direction === "asc"
+          ? valA.toString().localeCompare(valB.toString())
+          : valB.toString().localeCompare(valA.toString());
+      }
+    });
+  }
+
+  return filtered;
+}, [data, columnFilters, sortConfig]);
+
+  // --- Render Table Head ---
+  const thead = () =>
+    columns.map((col) => ({
+      data: (
+        <div className="flex flex-col">
+          <span
+            className={`cursor-pointer ${col.className || ""}`}
+            onClick={() => col.sortable !== false && handleSort(col.key)}
+          >
+            {col.label}
+            {sortConfig.key === col.key &&
+              (sortConfig.direction === "asc" ? " 🔼" : " 🔽")}
+          </span>
+          {col.filterable !== false && (
+            <input
+              type="text"
+              placeholder={`Search ${col.label}`}
+              value={columnFilters[col.key] || ""}
+              onChange={(e) => handleFilterChange(col.key, e.target.value)}
+              className="w-full text-xs border rounded px-1 py-0.5 mt-1"
+            />
+          )}
+        </div>
+      ),
+      className: col.className,
+    }));
+
+  // --- Render Table Body ---
+  const tbody = () => {
+    if (!processedData) return [];
+
+    return processedData.map((project, index) => {
+      const viewUrl = `/project/${encodeURIComponent(project.project_code)}`;
+
+      return {
+        data: [
+          { data: index + 1 },
+          { data: project.branchcode },
+          { data: project.project_code },
+          { data: project.title },
+          { data: project.client_code },
+          { data: project.type },
+          { data: project.budget },
+          { data: project.duration_days },
+          {
+            data: (
+              <div
+                className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+                  project.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full mr-2 ${
+                    project.status === "active" ? "bg-green-800" : "bg-red-700"
+                  }`}
+                ></span>
+                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+              </div>
+            ),
+          },
+          {
+            data: (
+              <div className="flex justify-center gap-2">
+                <Link to={viewUrl}>
+                  <button className="px-4 py-2 text-blue-700" title="View">
+                    <Eye size={20} />
+                  </button>
+                </Link>
+                <button
+                  className="p-1 text-[var(--color-primary)]"
+                  onClick={() => handleEditBranch(project)}
+                  title="Edit"
+                >
+                  <SquarePen size={18} />
+                </button>
+                <button
+                  className="p-1 text-red-600"
+                  onClick={() => handleDeleteBranch(project)}
+                  title="Delete"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            ),
+            className: "action-cell",
+          },
+        ].map((col, idx) => ({
+          ...col,
+          data:
+            idx === 9 ? (
+              col.data
+            ) : (
+              <div
+                onDoubleClick={() => navigate(viewUrl)}
+                className="w-full h-full cursor-pointer"
+              >
+                {col.data}
+              </div>
+            ),
+        })),
+      };
+    });
+  };
+
+
+  // const thead = () => [
+  //   { data: "id" },
+  //   { data: "Branch Code" },
+  //   { data: "Project_Code" },
+  //   { data: "Project Name" },
+  //   { data: "Client_Code" },
+  //   { data: "Type" },
+  //   { data: "Budget" },
+  //   { data: "Duration_Days" },
+  //   { data: "Status" },
+  //   { data: "Actions", className: "text-center" },
+  // ];
+
+  // const tbody = () => {
+  //   if (!data) return [];
+
+  //   return data.map((project, index) => ({
+  //     id: project.id,
+     
+  //     data: [
+  //       { data: index + 1 },
+  //       { data: project.branchcode },
+  //       { data: project.project_code },
+  //       { data: project.title },
+  //       { data: project.client_code },
+  //       { data: project.type },
+  //       { data: project.budget },
+  //       { data: project.duration_days },
+  //       {
+  //         data: (
+  //           <div
+  //             className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${project.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+  //           >
+  //             <span
+  //               className={`w-2 h-2 rounded-full mr-2 ${project.status === "active" ? "bg-green-800" : "bg-red-700"}`}
+  //             ></span>
+  //             {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+  //           </div>
+  //         ),
+  //       },
+  //       {
+  //         data: (
+  //           <div className="flex  justify-center gap-2">
+  //             <Link to={`/project/${encodeURIComponent(project.project_code)}`}>
+  //               <button className=" px-4 py-2 dark:text-blue-600 text-blue-700 rounded-sm">
+  //                 <Eye className="inline" size={20} />
+  //               </button>
+  //             </Link>
+  //             <button
+  //               className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleEditBranch(project)}
+  //               title="Edit"
+  //             >
+  //               <SquarePen size={18} />
+  //             </button>
+  //             <button
+  //               className="p-1 text-red-600 rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleDeleteBranch(project)}
+  //               title="Delete"
+  //             >
+  //               <Trash2 size={18} />
+  //             </button>
+  //           </div>
+  //         ),
+  //         className: "action-cell",
+  //       },
+  //     ],
+  //   }));
+  // };
 
   const handleEditSuccess = () => {
     setShowEditModal(false);
@@ -1008,6 +1197,21 @@ const Project = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Branches");
     XLSX.writeFile(wb, "ProjectList.xlsx");
   };
+
+
+
+  useEffect(() => {
+  fetch(`${BASE_URL}/get-roleaccessdetail/${UserRole}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.status) {
+        setRoleAccess(data.access);
+      }
+    });
+}, [UserRole]);
+
+console.log("RoleAccess:", roleAccess);
+
 
   return (
     <>
@@ -1046,12 +1250,23 @@ const Project = () => {
                 <FileDown className="mr-1" />
                 {!isMobile && "Export Excel"}
               </button>
-              <button
+            {/*  <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
               >
                 {!isMobile && "New Project"} +
-              </button>
+              </button>*/}
+
+
+              	{roleAccess?.project?.create && (
+  <button
+    onClick={() => setShowCreateModal(true)}
+    className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 font-medium text-sm rounded-sm px-5 py-2.5"
+  >
+    {!isMobile && "New Project"} +
+  </button>
+)}
+
             </div>
           </div>
 
@@ -1194,6 +1409,7 @@ const Project = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Create New Project"
+        closeOnOutsideClick={false}
       >
         <AddNewProject
           onSuccess={handleCreateSuccess}
@@ -1206,6 +1422,7 @@ const Project = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowEditModal(false)}
         title="Edit Project"
+        closeOnOutsideClick={false}
       >
         <EditProjectForm
           project={selectedBranch}
@@ -1219,6 +1436,7 @@ const Project = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowMeetingModal(false)}
         title="Create Branch Meeting"
+        closeOnOutsideClick={false}
       >
         <ProjectMeetingForm
           project={selectedBranch}
@@ -1232,6 +1450,7 @@ const Project = () => {
         className="w-full md:w-[600px]"
         onClose={() => setShowDeleteModal(false)}
         title="Delete Project"
+        closeOnOutsideClick={false}
       >
         <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
           <div className="space-y-4">

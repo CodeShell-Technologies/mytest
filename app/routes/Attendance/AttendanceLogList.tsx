@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState , useMemo} from "react";
 import DataTable from "src/component/DataTable";
 import CustomPagination from "src/component/CustomPagination";
 import Dropdown from "src/component/DrapDown";
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import axios from "axios";
+import {Link,  useNavigate } from "react-router-dom";
 import { BASE_URL, toastposition } from "~/constants/api";
 import toast, { Toaster } from "react-hot-toast";
 import { useAuthStore } from "src/stores/authStore";
@@ -26,6 +27,8 @@ import { formatDate } from "../../../src/utils/dateUtils";
 import Modal from "src/component/Modal";
 import EditBranchForm from "../Branch/EditFormData";
 import CreateAttendance from "./CreateAttendance";
+import EditAttendanceModal from "./EditAttendanceModal"; // import above
+
 
 const AttendanceLogList = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
@@ -58,6 +61,14 @@ const AttendanceLogList = () => {
     fetchBranches,
     isLoading: isStoreLoading,
   } = useBranchStore();
+
+
+    // const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
+
+ const [filters, setFilters] = useState({});
+ const [filteredLogs, setFilteredLogs] = useState<any[]>(attendanceLogs || []);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
   const pageSizeOptions = [
     { value: 10, label: "10 per page" },
@@ -342,80 +353,417 @@ const AttendanceLogList = () => {
     setShowEditModal(true);
   };
 
-  const formatDuration = (totalSeconds) => {
-    if (!totalSeconds || isNaN(totalSeconds)) return "N/A";
+const formatDurationHHMMStyle = (totalSeconds: number) => {
+  if (!totalSeconds || isNaN(totalSeconds)) return "00.00";
 
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  };
-  const thead = () => [
-    { data: "Staff ID" },
-    { data: "Staff Name" },
-    { data: "Date" },
-    { data: "Check In" },
-    { data: "Check Out" },
-    { data: "Total Hours" },
-    { data: "Status" },
-    { data: "Action" },
-  ];
+  return `${String(hours).padStart(2, "0")}.${String(minutes).padStart(2, "0")}`;
+};
 
-  const tbody = () => {
-    if (!attendanceLogs) return [];
 
-    return attendanceLogs.map((log) => ({
-      id: log._id,
-      data: [
-        { data: log.staff_id },
-        { data: log.staff_name },
-        { data: new Date(log.create_datetime).toLocaleDateString() },
-        { data: formatDate(log.check_in) || "N/A" },
-        { data: formatDate(log.check_out) || "N/A" },
-        { data: formatDuration(log.duration) },
+const columns = [
+  { key: "staff_id", label: "Staff ID", sortable: true, filterable: true },
+  { key: "staff_name", label: "Staff Name", sortable: true, filterable: true },
+  { key: "create_datetime", label: "Date", sortable: true, filterable: true },
+  { key: "check_in", label: "Check In", sortable: true },
+  { key: "check_out", label: "Check Out", sortable: true },
+  { key: "duration", label: "Total Hours", sortable: true },
+  { key: "status", label: "Status", sortable: true, filterable: true },
+  { key: "action", label: "Action" },
+];
 
-        {
-          data: (
-            <div
-              className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
-                log.status === "checkin"
-                  ? "bg-green-100 text-green-800"
-                  : log.status === "checkout"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-yellow-100 text-yellow-800"
-              }`}
-            >
-              {log.status === "present" ? (
-                <CheckCircle className="w-3 h-3 mr-1" />
-              ) : log.status === "absent" ? (
-                <XCircle className="w-3 h-3 mr-1" />
-              ) : (
-                <Clock className="w-3 h-3 mr-1" />
-              )}
-              {log.status}
-            </div>
-          ),
-        },
-        {
-          data: (
-            <div className="flex flex-wrap justify-center gap-2">
-        
-              <button
-                className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
-                onClick={() => handleEditAttendance(log)}
-                title="Edit"
-              >
-                <SquarePen size={18} />
-              </button>
-             
-            </div>
-          ),
-          className: "action-cell",
-        },
-      ],
+// 🔹 Table headers
+// const thead = () => [
+//   { data: "Staff ID" },
+//   { data: "Staff Name" },
+//   { data: "Date" },
+//   { data: "Check In" },
+//   { data: "Check Out" },
+//   { data: "Total Hours" },
+//   { data: "Status" },
+//   { data: "Action" },
+// ];
+
+
+
+// ✅ Sorting function
+const handleSort = (key: string) => {
+  let direction: "asc" | "desc" | null = "asc";
+
+  if (sortConfig.key === key && sortConfig.direction === "asc") {
+    direction = "desc";
+  } else if (sortConfig.key === key && sortConfig.direction === "desc") {
+    direction = null; // clear sort on third click
+  }
+
+  setSortConfig({ key, direction });
+};
+
+// ✅ Filtering function
+const handleFilterChange = (key: string, value: string) => {
+  setColumnFilters((prev) => ({
+    ...prev,
+    [key]: value,
+  }));
+};
+
+// ✅ Apply sorting + filtering whenever logs, filters, or sortConfig changes
+useEffect(() => {
+  let data = [...attendanceLogs];
+
+  // 🔹 Filtering
+  Object.entries(columnFilters).forEach(([key, value]) => {
+    if (value) {
+      data = data.filter((log) =>
+        String(log[key] || "").toLowerCase().includes(value.toLowerCase())
+      );
+    }
+  });
+
+  // 🔹 Sorting
+  if (sortConfig.key && sortConfig.direction) {
+    data.sort((a, b) => {
+      const valA = a[sortConfig.key];
+      const valB = b[sortConfig.key];
+
+      if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
+      if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }
+
+  setFilteredLogs(data);
+}, [attendanceLogs, columnFilters, sortConfig]);
+
+const thead = () =>
+    columns.map((col) => ({
+      data: (
+        <div className="flex flex-col">
+          <span
+            className={`cursor-pointer ${col.className || ""}`}
+            onClick={() => col.sortable !== false && handleSort(col.key)}
+          >
+            {col.label}
+            {sortConfig.key === col.key &&
+              (sortConfig.direction === "asc" ? " 🔼" : " 🔽")}
+          </span>
+          {col.filterable !== false && (
+            <input
+              type="text"
+              placeholder={`Search ${col.label}`}
+              value={columnFilters[col.key] || ""}
+              onChange={(e) => handleFilterChange(col.key, e.target.value)}
+              className="w-full text-xs border rounded px-1 py-0.5 mt-1"
+            />
+          )}
+        </div>
+      ),
+      className: col.className,
     }));
-  };
+
+
+
+
+
+
+// ✅ Use `filteredLogs` instead of `attendanceLogs` in tbody
+const tbody = () => {
+  if (!filteredLogs) return [];
+
+  return filteredLogs.map((log) => ({
+    id: log.id,
+    data: [
+      { data: log.staff_id },
+      { data: log.staff_name },
+      { data: new Date(log.create_datetime).toLocaleDateString() },
+      // { data: formatDate(log.check_in) || "N/A" },
+      // { data: formatDate(log.check_out) || "N/A" },
+      { data: log.check_in ? new Date(log.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "N/A" },
+{ data: log.check_out ? new Date(log.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "N/A" },
+
+      { data: formatDurationHHMMStyle(log.duration) },
+      {
+        data: (
+          <div
+            className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+              log.status === "checkin"
+                ? "bg-green-100 text-green-800"
+                : log.status === "checkout"
+                ? "bg-red-100 text-red-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {log.status === "present" ? (
+              <CheckCircle className="w-3 h-3 mr-1" />
+            ) : log.status === "absent" ? (
+              <XCircle className="w-3 h-3 mr-1" />
+            ) : (
+              <Clock className="w-3 h-3 mr-1" />
+            )}
+            {log.status}
+          </div>
+        ),
+      },
+      {
+        data: (
+          <div className="flex flex-wrap justify-center gap-2">
+            <button
+              className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+              onClick={() => handleEditAttendance(log)}
+              title="Edit"
+            >
+              <SquarePen size={18} />
+            </button>
+          </div>
+        ),
+        className: "action-cell",
+      },
+    ],
+  }));
+};
+// 🔹 Filtering function
+const applyFilters = (data, filters) => {
+  return data.filter((log) =>
+    Object.entries(filters).every(([key, value]) => {
+      if (!value) return true; // no filter applied
+      return String(log[key]).toLowerCase().includes(String(value).toLowerCase());
+    })
+  );
+};
+
+// 🔹 Sorting function
+const applySorting = (data, sortConfig) => {
+  if (!sortConfig.key) return data;
+
+  return [...data].sort((a, b) => {
+    const valA = a[sortConfig.key];
+    const valB = b[sortConfig.key];
+
+    if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
+    if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+};
+
+
+const processedData = useMemo(() => {
+    let filtered = applyFilters(attendanceLogs || [], filters);
+    let sorted = applySorting(filtered, sortConfig);
+    return sorted;
+  }, [attendanceLogs, filters, sortConfig]);
+
+  // 🔹 Table body
+  // const tbody = () => {
+  //   if (!processedData) return [];
+
+  //   return processedData.map((log) => ({
+  //     id: log.id,
+  //     data: [
+  //       { data: log.staff_id },
+  //       { data: log.staff_name },
+  //       { data: new Date(log.create_datetime).toLocaleDateString() },
+  //       { data: formatDate(log.check_in) || "N/A" },
+  //       { data: formatDate(log.check_out) || "N/A" },
+  //       { data: formatDurationHHMMStyle(log.duration) },
+  //       {
+  //         data: (
+  //           <div
+  //             className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+  //               log.status === "checkin"
+  //                 ? "bg-green-100 text-green-800"
+  //                 : log.status === "checkout"
+  //                 ? "bg-red-100 text-red-800"
+  //                 : "bg-yellow-100 text-yellow-800"
+  //             }`}
+  //           >
+  //             {log.status === "present" ? (
+  //               <CheckCircle className="w-3 h-3 mr-1" />
+  //             ) : log.status === "absent" ? (
+  //               <XCircle className="w-3 h-3 mr-1" />
+  //             ) : (
+  //               <Clock className="w-3 h-3 mr-1" />
+  //             )}
+  //             {log.status}
+  //           </div>
+  //         ),
+  //       },
+  //       {
+  //         data: (
+  //           <div className="flex flex-wrap justify-center gap-2">
+  //             <button
+  //               className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleEditAttendance(log)}
+  //               title="Edit"
+  //             >
+  //               <SquarePen size={18} />
+  //             </button>
+  //           </div>
+  //         ),
+  //         className: "action-cell",
+  //       },
+  //     ],
+  //   }));
+  // };
+
+
+
+
+
+
+
+  // 🔹 Column configuration for sorting + filtering
+// const columns = [
+//   { key: "staff_id", label: "Staff ID", sortable: true, filterable: true },
+//   { key: "staff_name", label: "Staff Name", sortable: true, filterable: true },
+//   { key: "create_datetime", label: "Date", sortable: true, filterable: true },
+//   { key: "check_in", label: "Check In", sortable: true },
+//   { key: "check_out", label: "Check Out", sortable: true },
+//   { key: "duration", label: "Total Hours", sortable: true },
+//   { key: "status", label: "Status", sortable: true, filterable: true },
+//   { key: "action", label: "Action" }, // not sortable/filterable
+// ];
+
+// // 🔹 Table headers (display only)
+// const thead = () => [
+//   { data: "Staff ID" },
+//   { data: "Staff Name" },
+//   { data: "Date" },
+//   { data: "Check In" },
+//   { data: "Check Out" },
+//   { data: "Total Hours" },
+//   { data: "Status" },
+//   { data: "Action" },
+// ];
+
+// // 🔹 Table body (data rendering)
+// const tbody = () => {
+//   if (!attendanceLogs) return [];
+
+//   return attendanceLogs.map((log) => ({
+//     id: log.id,
+//     data: [
+//       { data: log.staff_id },
+//       { data: log.staff_name },
+//       { data: new Date(log.create_datetime).toLocaleDateString() },
+//       { data: formatDate(log.check_in) || "N/A" },
+//       { data: formatDate(log.check_out) || "N/A" },
+//       { data: formatDurationHHMMStyle(log.duration) },
+
+//       {
+//         data: (
+//           <div
+//             className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+//               log.status === "checkin"
+//                 ? "bg-green-100 text-green-800"
+//                 : log.status === "checkout"
+//                 ? "bg-red-100 text-red-800"
+//                 : "bg-yellow-100 text-yellow-800"
+//             }`}
+//           >
+//             {log.status === "present" ? (
+//               <CheckCircle className="w-3 h-3 mr-1" />
+//             ) : log.status === "absent" ? (
+//               <XCircle className="w-3 h-3 mr-1" />
+//             ) : (
+//               <Clock className="w-3 h-3 mr-1" />
+//             )}
+//             {log.status}
+//           </div>
+//         ),
+//       },
+
+//       {
+//         data: (
+//           <div className="flex flex-wrap justify-center gap-2">
+//             <button
+//               className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+//               onClick={() => handleEditAttendance(log)}
+//               title="Edit"
+//             >
+//               <SquarePen size={18} />
+//             </button>
+//           </div>
+//         ),
+//         className: "action-cell",
+//       },
+//     ],
+//   }));
+// };
+
+
+
+
+
+
+
+
+  // const thead = () => [
+  //   { data: "Staff ID" },
+  //   { data: "Staff Name" },
+  //   { data: "Date" },
+  //   { data: "Check In" },
+  //   { data: "Check Out" },
+  //   { data: "Total Hours" },
+  //   { data: "Status" },
+  //   { data: "Action" },
+  // ];
+
+  // const tbody = () => {
+  //   if (!attendanceLogs) return [];
+
+  //   return attendanceLogs.map((log) => ({
+  //     id: log.id,
+  //     data: [
+  //       { data: log.staff_id },
+  //       { data: log.staff_name },
+  //       { data: new Date(log.create_datetime).toLocaleDateString() },
+  //       { data: formatDate(log.check_in) || "N/A" },
+  //       { data: formatDate(log.check_out) || "N/A" },
+  //       { data: formatDurationHHMMStyle(log.duration) },
+
+  //       {
+  //         data: (
+  //           <div
+  //             className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+  //               log.status === "checkin"
+  //                 ? "bg-green-100 text-green-800"
+  //                 : log.status === "checkout"
+  //                   ? "bg-red-100 text-red-800"
+  //                   : "bg-yellow-100 text-yellow-800"
+  //             }`}
+  //           >
+  //             {log.status === "present" ? (
+  //               <CheckCircle className="w-3 h-3 mr-1" />
+  //             ) : log.status === "absent" ? (
+  //               <XCircle className="w-3 h-3 mr-1" />
+  //             ) : (
+  //               <Clock className="w-3 h-3 mr-1" />
+  //             )}
+  //             {log.status}
+  //           </div>
+  //         ),
+  //       },
+  //       {
+  //         data: (
+  //           <div className="flex flex-wrap justify-center gap-2">
+        
+  //             <button
+  //               className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleEditAttendance(log)}
+  //               title="Edit"
+  //             >
+  //               <SquarePen size={18} />
+  //             </button>
+             
+  //           </div>
+  //         ),
+  //         className: "action-cell",
+  //       },
+  //     ],
+  //   }));
+  // };
 
   return (
     <>
@@ -546,6 +894,20 @@ const AttendanceLogList = () => {
           </div>
         </div>
       </div>
+
+
+
+        // inside return()
+<EditAttendanceModal
+  isVisible={showEditModal}
+  onClose={() => setShowEditModal(false)}
+  log={selectedLog}
+  token={token}
+  onSuccess={async () => {
+    setShowEditModal(false);
+    await fetchAttendanceLogs();
+  }}
+/>
 
       <Modal
         isVisible={showCheckModal}

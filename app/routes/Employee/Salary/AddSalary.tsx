@@ -15,22 +15,29 @@ import {
   User,
 } from "lucide-react";
 import useEmployeeStore from "src/stores/useEmployeeStore";
-const departmentOptions = [
-  "architecture",
-  "visualization",
-  "structural",
-  "drafting",
-  "hr",
-  "sales",
-  "consulting",
-];
+
+import AsyncSelect from "react-select/async";
 const CreateSalaryForm = ({ onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // const [error, setError] = useState(null);
   const token = useAuthStore((state) => state.accessToken);
   const [staffOptions, setStaffOptions] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [isFetchingStaff, setIsFetchingStaff] = useState(false);
+
+
+  const [departments, setDepartments] = useState<Department[]>([]);
+  // const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<Option[]>([]);
+
+  const [departmentDesignations, setDepartmentDesignations] = useState<
+    Record<string, string[]>
+  >({});
+  // const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+  const [designationOptions, setDesignationOptions] = useState<Option[]>([]);
+  const [error, setError] = useState("");
+  const [roleOptions, setRoleOptions] = useState([]);
+
   
   const permissions = useAuthStore((state) => state.permissions);
   const userRole = permissions[0]?.role;
@@ -76,7 +83,7 @@ const CreateSalaryForm = ({ onSuccess, onCancel }) => {
       if (response.data && response.data.data) {
         const options = response.data.data.map(user => ({
           value: user.staff_id,
-          label: `${user.firstname + user.lastname} - ${user.designation}`
+          label: `${user.firstname + user.lastname} - ${user.staff_id}`
         }));
         setStaffOptions(options);
       }
@@ -96,6 +103,54 @@ const CreateSalaryForm = ({ onSuccess, onCancel }) => {
       setIsFetchingStaff(false);
     }
   };
+
+
+
+useEffect(() => {
+  async function fetchData() {
+    try {
+      const [deptRes, desigRes] = await Promise.all([
+        fetch(`${BASE_URL}/getDepartments`),
+        fetch(`${BASE_URL}/getDesignations`),
+      ]);
+
+      const deptData = await deptRes.json();
+      const desigData = await desigRes.json();
+
+      // Set full department list
+      setDepartments(deptData.data);
+
+      // Department options (names only)
+      const deptNames = deptData.data
+        .map((d: Department) => d.name)
+        .filter(Boolean)
+        .map((name: string) => ({ value: name, label: name }));
+      setDepartmentOptions(deptNames);
+
+      // Build mapping { departmentName: [designation1, designation2] }
+      const deptDesigs: Record<string, Option[]> = {};
+
+      desigData.data.forEach((item: Designation) => {
+        const dept = item.department;
+        if (!deptDesigs[dept]) {
+          deptDesigs[dept] = [];
+        }
+        deptDesigs[dept].push({
+          value: item.designation,
+          label: item.designation,
+        });
+      });
+
+      setDepartmentDesignations(deptDesigs); // You probably want to save it in state
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }
+
+  fetchData(); // ✅ call the async function
+
+}, []); // ✅ empty dependency array (or add dependencies as needed)
+
    const handleDepartmentChange = (e) => {
     setSelectedDepartment(e.target.value);
     // Reset staff_id when department changes
@@ -149,6 +204,23 @@ const CreateSalaryForm = ({ onSuccess, onCancel }) => {
     }
   };
 
+
+  const loadDeps = (inputValue: string, callback: (options: Option[]) => void) => {
+  const filtered = departmentOptions.filter((c) =>
+    c.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
+  callback(filtered);
+};
+
+
+     const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = staffOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
       <Toaster position={toastposition} />
@@ -181,7 +253,7 @@ const CreateSalaryForm = ({ onSuccess, onCancel }) => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Building className="inline mr-1" size={14} /> Department <span className="text-red-700 text-lg m-2">*</span>
             </p>
-            <select
+            {/*<select
               value={selectedDepartment}
               onChange={handleDepartmentChange}
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
@@ -193,7 +265,28 @@ const CreateSalaryForm = ({ onSuccess, onCancel }) => {
                   {dept}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+           <AsyncSelect
+  cacheOptions
+  defaultOptions={departmentOptions} // must be [{ value, label }]
+  name="department"
+  loadOptions={loadDeps}
+  onChange={(selected: Option | null) => {
+    setSelectedDepartment(selected ? selected.value : ""); // ✅ update local state
+    setFormData((prev) => ({
+      ...prev,
+      department: selected ? selected.value : "",
+      staff_id: "", // ✅ reset staff_id when department changes
+    }));
+  }}
+  value={
+    departmentOptions.find((opt) => opt.value === formData.department) || null
+  }
+  placeholder="Select or search department"
+/>
+
+
           </div>
 
           {/* Staff ID Selection */}
@@ -204,21 +297,38 @@ const CreateSalaryForm = ({ onSuccess, onCancel }) => {
             {isFetchingStaff ? (
               <div className="text-sm text-gray-500 mt-1">Loading staff...</div>
             ) : (
-              <select
-                name="staff_id"
-                value={formData.staff_id}
-                onChange={handleChange}
-                className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-                required
-                disabled={!selectedDepartment || staffOptions.length === 0}
-              >
-                <option value="">Select Staff</option>
-                {staffOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              // <select
+              //   name="staff_id"
+              //   value={formData.staff_id}
+              //   onChange={handleChange}
+              //   className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+              //   required
+              //   disabled={!selectedDepartment || staffOptions.length === 0}
+              // >
+              //   <option value="">Select Staff</option>
+              //   {staffOptions.map((option) => (
+              //     <option key={option.value} value={option.value}>
+              //       {option.label}
+              //     </option>
+              //   ))}
+              // </select>
+
+
+
+            <AsyncSelect
+          cacheOptions
+          defaultOptions={staffOptions}
+          name="staff_id"
+          loadOptions={loadStaffs}
+          onChange={(selected: Option | null) =>
+            setFormData({ ...formData, staff_id: selected ? selected.value : "" })
+          }
+          value={staffOptions.find((opt) => opt.value === formData.staff_id) || null}
+          isDisabled={!formData.department || staffOptions.length === 0}
+          placeholder="Select or search staff"
+        />
+
+
             )}
             {selectedDepartment && staffOptions.length === 0 && !isFetchingStaff && (
               <div className="text-xs text-gray-500 mt-1">No staff found in this department</div>

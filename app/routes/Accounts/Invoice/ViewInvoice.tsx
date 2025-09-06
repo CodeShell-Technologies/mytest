@@ -54,33 +54,55 @@ const ViewInvoice = () => {
   }
 
   // Helper function to convert number to words
-  const numberToWords = (num) => {
-    // Implement your number to words conversion logic here
-    // This is a simplified version
-    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
-    const tens = ['', 'Ten', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  // const numberToWords = (num) => {
+  //   // Implement your number to words conversion logic here
+  //   // This is a simplified version
+  //   const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+  //   const tens = ['', 'Ten', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
     
-    if (num === 0) return 'Zero';
+  //   if (num === 0) return 'Zero';
     
-    let words = '';
-    if (num >= 1000) {
-      words += ones[Math.floor(num / 1000)] + ' Thousand ';
-      num %= 1000;
-    }
-    if (num >= 100) {
-      words += ones[Math.floor(num / 100)] + ' Hundred ';
-      num %= 100;
-    }
-    if (num >= 20) {
-      words += tens[Math.floor(num / 10)] + ' ';
-      num %= 10;
-    }
-    if (num > 0) {
-      words += ones[num] + ' ';
-    }
+  //   let words = '';
+  //   if (num >= 1000) {
+  //     words += ones[Math.floor(num / 1000)] + ' Thousand ';
+  //     num %= 1000;
+  //   }
+  //   if (num >= 100) {
+  //     words += ones[Math.floor(num / 100)] + ' Hundred ';
+  //     num %= 100;
+  //   }
+  //   if (num >= 20) {
+  //     words += tens[Math.floor(num / 10)] + ' ';
+  //     num %= 10;
+  //   }
+  //   if (num > 0) {
+  //     words += ones[num] + ' ';
+  //   }
     
-    return words.trim() + ' Only';
+  //   return words.trim() + ' Only';
+  // };
+
+  // Convert numbers to words
+  const numberToWords = (num: number): string => {
+    const a = [
+      "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+      "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen",
+    ];
+    const b = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+    const inWords = (n: number): string => {
+      if (n < 20) return a[n];
+      if (n < 100) return b[Math.floor(n / 10)] + (n % 10 ? " " + a[n % 10] : "");
+      if (n < 1000) return a[Math.floor(n / 100)] + " Hundred" + (n % 100 ? " " + inWords(n % 100) : "");
+      if (n < 100000) return inWords(Math.floor(n / 1000)) + " Thousand" + (n % 1000 ? " " + inWords(n % 1000) : "");
+      if (n < 10000000) return inWords(Math.floor(n / 100000)) + " Lakh" + (n % 100000 ? " " + inWords(n % 100000) : "");
+      return inWords(Math.floor(n / 10000000)) + " Crore" + (n % 10000000 ? " " + inWords(n % 10000000) : "");
+    };
+
+    return inWords(num) + " Only";
   };
+
+
 
   // Format date from "2025-07-07T18:30:00.000Z" to "07/07/2025"
   const formatDate = (dateString) => {
@@ -96,6 +118,9 @@ const ViewInvoice = () => {
           <h1 className="text-2xl font-bold">View Invoice Page</h1>
         </div>
         <div>
+
+
+
           <button className="text-gray-500 bg-gray-200 px-3 py-1 rounded-lg mt-6" onClick={handleGoBack}>
             <LogOut className="inline rotate-180 text-gray-500 mr-3"/>Go Back
           </button>
@@ -258,7 +283,7 @@ const ViewInvoice = () => {
             <div className="text-sm w-[50%] ">
               <p>Total in Words</p>
               <p className="font-bold italic">
-                {numberToWords(parseFloat(invoiceData.invoice.final_amount))}
+                {numberToWords(Number(invoiceData.invoice.final_amount))}
               </p>
               <p className="mt-5">
                 Notes:
@@ -290,6 +315,16 @@ const ViewInvoice = () => {
                       {invoiceData.invoice.sgst_amount}
                     </td>
                   </tr>
+
+                    <tr>
+                    <td className="pr-4 text-right">Discount:</td>
+                    <td className="text-left">
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;₹
+                      {invoiceData.invoice.discount}
+                    </td>
+                  </tr>
+
+
                   <tr>
                     <td className="pr-4 text-right">Rounding:</td>
                     <td className="text-left">
@@ -304,16 +339,16 @@ const ViewInvoice = () => {
                       {invoiceData.invoice.final_amount}
                     </td>
                   </tr>
-                  <tr>
+                  {/*<tr>
                     <td className="pr-4 text-right">Payment Mode:</td>
                     <td className="text-left">
                       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;₹
                       {invoiceData.invoice.paid_amount}
                     </td>
-                  </tr>
+                  </tr>*/}
                   <tr className="">
                     <td className="pr-4 text-right">
-                      <strong>Balance Due:</strong>
+                      <strong>Balance:</strong>
                     </td>
                     <td className="text-left">
                       <strong>

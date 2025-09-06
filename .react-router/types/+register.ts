@@ -15,7 +15,9 @@ type Params = {
     "id": string;
   };
   "/employee": {};
-  "/employee/salary_slip": {};
+  "/employee/salary_slip/:id": {
+    "id": string;
+  };
   "/employee/addpage/:id": {
     "id": string;
   };
@@ -30,7 +32,13 @@ type Params = {
   "/project/:id": {
     "id": string;
   };
+  "/projectaccount/:id": {
+    "id": string;
+  };
   "/milestone/:id": {
+    "id": string;
+  };
+  "/milestonepayment/:id": {
     "id": string;
   };
   "/campaignview/:id": {
@@ -41,9 +49,16 @@ type Params = {
   };
   "/project_tasklist": {};
   "/leads": {};
+  "/leadscovert": {};
   "/client": {};
   "/client_add": {};
   "/client_view": {};
+  "/meeting_view/:id": {
+    "id": string;
+  };
+  "/meetings/:id": {
+    "id": string;
+  };
   "/campaign": {};
   "/account_profile": {};
   "/team": {};
@@ -82,12 +97,15 @@ type Params = {
     "id": string;
     "resign_id": string;
   };
+  "/invoice_create": {};
   "/settings": {};
   "/settings/access-permission/roles": {};
   "/settings/access-permission/user": {};
   "/settings/access-permission/systemsetting": {};
+  "/settings/access-permission/departments": {};
+  "/settings/access-permission/designations": {};
   "/settings/access-permission/teams": {};
-  "/settings/settings/invoice/tax": {};
+  "/settings/invoice/tax": {};
   "/settings/invoice/payment-methods": {};
   "/*": {
     "*": string;

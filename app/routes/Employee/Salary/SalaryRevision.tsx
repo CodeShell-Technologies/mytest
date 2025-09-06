@@ -27,7 +27,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import Modal from "src/component/Modal";
 import HRSalaryApprovalForm from "./HRSalaryApprovalForm";
 // import HRSalaryApprovalForm
-
+import AddSalaryRevision  from "./AddSalaryRevision";
 const SalaryRevision = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,6 +44,8 @@ const SalaryRevision = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
   
   // Auth store data
   const token = useAuthStore((state) => state.accessToken);
@@ -52,12 +54,22 @@ const SalaryRevision = () => {
   const userBranchCode = useAuthStore((state) => state.branchcode);
   const role = permission[0]?.role || "employee";
 
+  // const {
+  //   branchCodeOptions,
+  //   fetchBranches,
+  //   isLoading: isStoreLoading,
+  // } = useBranchStore();
+
+
+
+  // const token = useAuthStore((state) => state.accessToken);
   const {
+    branches,
+    managerOptions,
     branchCodeOptions,
     fetchBranches,
     isLoading: isStoreLoading,
   } = useBranchStore();
-
   const pageSizeOptions = [
     { value: 10, label: "10 per page" },
     { value: 20, label: "20 per page" },
@@ -87,6 +99,13 @@ const SalaryRevision = () => {
     }
     return [];
   };
+
+
+  useEffect(() => {
+    fetchBranches(token);
+  }, [token]);
+
+
 
   useEffect(() => {
     if (role === "superadmin" || role === "hr") {
@@ -246,6 +265,14 @@ const SalaryRevision = () => {
       return;
     }
 
+
+      const handleCreateSuccess = () => {
+    setShowCreateModal(false);
+    toast.success("Branch added successfully!");
+    fetchBranches(token);
+    getBranch();
+  };
+
     const dataToExport = salaryRequests.map((request) => ({
       "Performance ID": request.performance_id,
       "Staff ID": request.staff_id,
@@ -383,6 +410,17 @@ const SalaryRevision = () => {
             <h2 className="text-xl font-semibold text-[var(--color-primary)] dark:text-[var(--color-primary)]">
               Salary Increment Requests
             </h2>
+
+
+
+
+
+{/*            <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
+              >
+                {!isMobile && "Add Request"} +
+              </button>*/}
             {isMobile && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -393,6 +431,23 @@ const SalaryRevision = () => {
               </button>
             )}
           </div>
+
+              <Modal
+        isVisible={showCreateModal}
+        className="w-full md:w-[800px]"
+        onClose={() => setShowCreateModal(false)}
+        title="Create New Increment Request"
+      >
+        <AddSalaryRevision
+          onSuccess={() => {
+            setShowCreateModal(false);
+            getBranch(); // Refresh salary list
+          }}
+          onCancel={() => setShowCreateModal(false)}
+        />
+      </Modal>
+
+
           <Toaster position={toastposition} reverseOrder={false} />
 
           <div
@@ -480,6 +535,10 @@ const SalaryRevision = () => {
               tbody={tbody}
               responsive={true}
               className="min-w-full"
+              enableFilters={true}
+  enableSorting={true}
+
+
             />
           </div>
 

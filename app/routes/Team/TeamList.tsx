@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import DataTable from "src/component/DataTable";
 import CustomPagination from "src/component/CustomPagination";
 import SearchInput from "src/component/SearchInput";
@@ -204,61 +204,135 @@ console.log("deletedcodeformdata",deleteTeamData)
     alert("navigateactive")
     navigate(`/teamview/${encodeURIComponent(id)}`)
   }
-  const thead = () => [
-    { data: "Team Id" },
-    { data: "Team Name" },
-    { data: "Team Lead Id" },
-    { data: "Branch Code" },
-    { data: "Created Date" },
-    { data: "Actions", className: "text-center" },
+
+
+
+// const navigate = useNavigate();
+
+  // --- Sorting & Filtering State ---
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [columnFilters, setColumnFilters] = useState({});
+
+  // --- Columns ---
+  const columns = [
+    { key: "team_id", label: "Team Id" },
+    { key: "team_name", label: "Team Name" },
+    { key: "team_lead", label: "Team Lead Id" },
+    { key: "branchcode", label: "Branch Code" },
+    { key: "created_on", label: "Created Date" },
+    { key: "actions", label: "Actions", sortable: false, filterable: false, className: "text-center" },
   ];
 
-  const tbody = () => {
+  // --- Sorting handler ---
+  const handleSort = (key) => {
+    if (sortConfig.key === key) {
+      setSortConfig({
+        key,
+        direction: sortConfig.direction === "asc" ? "desc" : "asc",
+      });
+    } else {
+      setSortConfig({ key, direction: "asc" });
+    }
+  };
+
+  // --- Filter handler ---
+  const handleFilterChange = (key, value) => {
+    setColumnFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // --- Filtered & Sorted Data ---
+  const processedData = useMemo(() => {
     if (!data) return [];
 
-    return data.map((team) => ({
-      id: team.id,
+    let filtered = data.filter((team) =>
+      columns.every((col) => {
+        if (col.filterable === false || !columnFilters[col.key]) return true;
+
+        let value = team[col.key] ?? "";
+        return value.toString().toLowerCase().includes(columnFilters[col.key].toLowerCase());
+      })
+    );
+
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        let valA = a[sortConfig.key] ?? "";
+        let valB = b[sortConfig.key] ?? "";
+
+        if (sortConfig.key === "created_on") {
+          valA = new Date(valA);
+          valB = new Date(valB);
+        }
+
+        if (typeof valA === "number" && typeof valB === "number") {
+          return sortConfig.direction === "asc" ? valA - valB : valB - valA;
+        } else {
+          return sortConfig.direction === "asc"
+            ? valA.toString().localeCompare(valB.toString())
+            : valB.toString().localeCompare(valA.toString());
+        }
+      });
+    }
+
+    return filtered;
+  }, [data, columnFilters, sortConfig]);
+
+  // --- Render Table Head ---
+  const thead = () =>
+    columns.map((col) => ({
+      data: (
+        <div className="flex flex-col">
+          <span
+            className={`cursor-pointer ${col.className || ""}`}
+            onClick={() => col.sortable !== false && handleSort(col.key)}
+          >
+            {col.label}
+            {sortConfig.key === col.key &&
+              (sortConfig.direction === "asc" ? " 🔼" : " 🔽")}
+          </span>
+          {col.filterable !== false && (
+            <input
+              type="text"
+              placeholder={`Search ${col.label}`}
+              value={columnFilters[col.key] || ""}
+              onChange={(e) => handleFilterChange(col.key, e.target.value)}
+              className="w-full text-xs border rounded px-1 py-0.5 mt-1"
+            />
+          )}
+        </div>
+      ),
+      className: col.className,
+    }));
+
+  // --- Render Table Body ---
+  const tbody = () => {
+    if (!processedData) return [];
+
+    return processedData.map((team) => ({
       data: [
         { data: team.team_id },
         { data: team.team_name },
         { data: team.team_lead },
         { data: team.branchcode },
-        {data:new Date(team.created_on).toISOString().split('T')[0]},
-  
-        // {
-        //   data: (
-        //     <div
-        //       className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${team.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-        //     >
-        //       <span
-        //         className={`w-2 h-2 rounded-full mr-2 ${team.status === "active" ? "bg-green-800" : "bg-red-700"}`}
-        //       ></span>
-        //       {team.status.charAt(0).toUpperCase() + team.status.slice(1)}
-        //     </div>
-        //   ),employee
-        // },
+        { data: new Date(team.created_on).toISOString().split("T")[0] },
         {
           data: (
             <div className="flex flex-wrap justify-center gap-2">
-            
-                <button
-                  className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
-                  title="View"
-                  onClick={()=>handleView(team.team_id)}
-                >
-                  <Eye size={18} />
-                </button>
-   
-            
               <button
-                className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+                className="p-1 text-blue-700"
+                title="View"
+                onClick={() => handleView(team.team_id)}
+              >
+                <Eye size={18} />
+              </button>
+              <button
+                className="p-1 text-blue-700"
                 onClick={() => handleEditBranch(team)}
                 title="Edit"
               >
                 <SquarePen size={18} />
               </button>
               <button
-                className="p-1 text-red-600 rounded hover:text-gray-500 dark:hover:text-gray-300"
+                className="p-1 text-red-600"
                 onClick={() => handleDeleteBranch(team)}
                 title="Delete"
               >
@@ -268,9 +342,93 @@ console.log("deletedcodeformdata",deleteTeamData)
           ),
           className: "action-cell",
         },
-      ],
+      ].map((col, idx) => ({
+        ...col,
+        data:
+          idx === 5 ? (
+            col.data
+          ) : (
+            <div
+              onDoubleClick={() => navigate(`/teamview/${encodeURIComponent(team.team_id)}`)}
+              className="w-full h-full cursor-pointer"
+            >
+              {col.data}
+            </div>
+          ),
+      })),
     }));
   };
+
+
+
+
+  // const thead = () => [
+  //   { data: "Team Id" },
+  //   { data: "Team Name" },
+  //   { data: "Team Lead Id" },
+  //   { data: "Branch Code" },
+  //   { data: "Created Date" },
+  //   { data: "Actions", className: "text-center" },
+  // ];
+
+  // const tbody = () => {
+  //   if (!data) return [];
+
+  //   return data.map((team) => ({
+  //     id: team.id,
+  //     data: [
+  //       { data: team.team_id },
+  //       { data: team.team_name },
+  //       { data: team.team_lead },
+  //       { data: team.branchcode },
+  //       {data:new Date(team.created_on).toISOString().split('T')[0]},
+  
+  //       // {
+  //       //   data: (
+  //       //     <div
+  //       //       className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${team.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+  //       //     >
+  //       //       <span
+  //       //         className={`w-2 h-2 rounded-full mr-2 ${team.status === "active" ? "bg-green-800" : "bg-red-700"}`}
+  //       //       ></span>
+  //       //       {team.status.charAt(0).toUpperCase() + team.status.slice(1)}
+  //       //     </div>
+  //       //   ),employee
+  //       // },
+  //       {
+  //         data: (
+  //           <div className="flex flex-wrap justify-center gap-2">
+            
+  //               <button
+  //                 className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //                 title="View"
+  //                 onClick={()=>handleView(team.team_id)}
+  //               >
+  //                 <Eye size={18} />
+  //               </button>
+   
+            
+  //             <button
+  //               className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleEditBranch(team)}
+  //               title="Edit"
+  //             >
+  //               <SquarePen size={18} />
+  //             </button>
+  //             <button
+  //               className="p-1 text-red-600 rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleDeleteBranch(team)}
+  //               title="Delete"
+  //             >
+  //               <Trash2 size={18} />
+  //             </button>
+  //           </div>
+  //         ),
+  //         className: "action-cell",
+  //       },
+  //     ],
+  //   }));
+  // };
 
   const handleEditSuccess = () => {
     setShowEditModal(false);

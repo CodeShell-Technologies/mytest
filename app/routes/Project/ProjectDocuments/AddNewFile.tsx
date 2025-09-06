@@ -299,31 +299,65 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 };
 
 
- const handleSubmit = async () => {
+//  const handleSubmit = async () => {
+//   setLoading(true);
+//   setError("");
+
+//   const form = new FormData();
+
+//   form.append("branchcode", formData.branchcode);
+//   form.append("project_id", formData.project_code); // Match your backend field
+//   // form.append("client_id", formData.client_id || ""); // Optional, if needed
+//   // form.append("staff_id", userId?.toString() || ""); // Assuming staff_id = logged-in user
+//   // form.append("name", formData.task_title || ""); // Assuming 'task_title' is document name
+//   // form.append("type", formData.task_priority || ""); // If you store priority as type
+//   // form.append("field", formData.notes || ""); // Assuming 'notes' can be field
+//   form.append("on_date", formData.start_date || "");
+//   // form.append("description", formData.collaborate || ""); // Adjust if needed
+
+//   if (formData.documentFile) {
+//     form.append("file", formData.documentFile); // Important: field name must match multer's .single('file')
+//   }
+
+//   try {
+//     const response = await axios.post(`${BASE_URL}/upload`, form, {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//         // Note: Do NOT manually set 'Content-Type' here. Let Axios set it for FormData.
+//       },
+//     });
+
+//     if (response.status === 201 || response.status === 200) {
+//       toast.success("Document uploaded successfully!");
+//       onSuccess();
+//     } else {
+//       setError(response.data.message || "Upload failed");
+//     }
+//   } catch (err: any) {
+//     setError(err.response?.data?.message || "An error occurred");
+//     toast.error(err.response?.data?.message || "Error uploading document");
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+
+
+const handleSubmit = async () => {
   setLoading(true);
   setError("");
 
   const form = new FormData();
-
-  form.append("branchcode", formData.branchcode);
-  form.append("project_id", formData.project_code); // Match your backend field
-  // form.append("client_id", formData.client_id || ""); // Optional, if needed
-  // form.append("staff_id", userId?.toString() || ""); // Assuming staff_id = logged-in user
-  // form.append("name", formData.task_title || ""); // Assuming 'task_title' is document name
-  // form.append("type", formData.task_priority || ""); // If you store priority as type
-  // form.append("field", formData.notes || ""); // Assuming 'notes' can be field
+  form.append("project_id", formData.project_code);
   form.append("on_date", formData.start_date || "");
-  // form.append("description", formData.collaborate || ""); // Adjust if needed
-
   if (formData.documentFile) {
-    form.append("file", formData.documentFile); // Important: field name must match multer's .single('file')
+    form.append("file", formData.documentFile); // must match backend field name
   }
 
   try {
     const response = await axios.post(`${BASE_URL}/upload`, form, {
       headers: {
         Authorization: `Bearer ${token}`,
-        // Note: Do NOT manually set 'Content-Type' here. Let Axios set it for FormData.
       },
     });
 
@@ -334,12 +368,14 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setError(response.data.message || "Upload failed");
     }
   } catch (err: any) {
-    setError(err.response?.data?.message || "An error occurred");
+    console.error("Upload Error:", err.response?.data || err);
+    setError(err.response?.data?.message || "Error uploading document");
     toast.error(err.response?.data?.message || "Error uploading document");
   } finally {
     setLoading(false);
   }
 };
+
 
 
   return (

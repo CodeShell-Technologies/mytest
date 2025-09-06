@@ -6,39 +6,68 @@ import axios from "axios";
 import { BASE_URL } from "~/constants/api";
 import { useAuthStore } from "src/stores/authStore";
 
-const MomViewPage = ({ meeting }) => {
+// import  EditMeetingModal from "./EditMeetingModal";
+
+
+import { useLocation , useParams  } from "react-router-dom";
+
+const MomViewPage = () => {
   const [participants, setParticipants] = useState([]);
+
+  const { state } = useLocation();
+  // const meeting = state?.meetings; // 👈 meeting object passed from ClientMom
+
+  const { id } = useParams();
+
+   const [meeting, setMeeting] = useState<any>(null);
   const [targets, setTargets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const token = useAuthStore((state) => state.accessToken);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
-  useEffect(() => {
-    if (meeting?.meet_id) {
-      setLoading(true);
-      
-      Promise.all([
-        axios.get(`${BASE_URL}/doc_meet/participant/read?meet_id=${meeting.meet_id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${BASE_URL}/doc_meet/target/read?meet_id=${meeting.meet_id}`, {
-          headers: { Authorization: `Bearer ${token} ` }
-        })
-      ])
-      .then(([participantsRes, targetsRes]) => {
+  
+
+useEffect(() => {
+    if (!id) return;
+
+    setLoading(true);
+
+    // fetch meeting, participants, and targets in parallel
+    const fetchMeetingData = async () => {
+      try {
+        const [meetingRes, participantsRes, targetsRes] = await Promise.all([
+          axios.get(`${BASE_URL}/getmeetingbyid?id=${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${BASE_URL}/doc_meet/participant/read?meet_id=${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${BASE_URL}/doc_meet/target/read?meet_id=${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        setMeeting(meetingRes.data.data);
         setParticipants(participantsRes.data.data || []);
         setTargets(targetsRes.data.data || []);
         setError(null);
-      })
-      .catch(err => {
+      } catch (err) {
+        console.error(err);
         setError("Failed to load meeting details");
-        console.error("Error fetching meeting data:", err);
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
-    }
-  }, [meeting]);
+      }
+    };
+
+    fetchMeetingData();
+  }, [id, token]);
+
+  if (loading) return <p className="text-center mt-10">Loading meeting details...</p>;
+  if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
+  if (!meeting) return <p className="text-center mt-10">Meeting not found</p>;
+
+
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -91,8 +120,11 @@ const MomViewPage = ({ meeting }) => {
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
+
+
+        
           <h1 className="text-2xl font-bold text-red-700 dark:text-white">Minutes of Meeting</h1>
-          <p className="text-gray-500 dark:text-gray-400">ID: {meeting?.meet_id || "N/A"}</p>
+          <p className="text-gray-500 dark:text-gray-400">ID: {id || "N/A"}</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
@@ -208,7 +240,7 @@ const MomViewPage = ({ meeting }) => {
             <div className="mt-6">
               <h4 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
                 <ClipboardCheck className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
-                Notes
+                Meeting Notes / MOM
               </h4>
               <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
                 <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{meeting.notes}</p>
@@ -232,17 +264,49 @@ const MomViewPage = ({ meeting }) => {
             </div>
           )}
         </div>
+          {meeting?.doc && meeting.doc.length > 0 && (
+  <div className="mt-6">
+    <h4 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+      <CgFileDocument className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
+      Documents
+    </h4>
+    <div className="space-y-2">
+      {meeting.doc.map((document) => (
+        <a
+          key={document.id}
+          href={document.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block p-2 bg-gray-50 dark:bg-gray-700/30 rounded-md text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          {document.url}
+        </a>
+      ))}
+    </div>
+  </div>
+)}
       </div>
 
+
+
+
       <div className="mt-6 flex justify-end gap-3">
-        <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+        {/*<button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
           Download PDF
-        </button>
-        <button className="px-4 py-2 bg-red-700 text-white rounded-md hover:bg-red-800 dark:bg-red-800 dark:hover:bg-red-900">
+        </button>*/}
+        {/*<button 
+
+          onClick={() => setIsEditOpen(true)}
+          className="px-4 py-2 bg-red-700 text-white rounded-md hover:bg-red-800 dark:bg-red-800 dark:hover:bg-red-900">
           Edit Minutes
-        </button>
+        </button>*/}
       </div>
+    
+    {/*</div>*/}
     </div>
+
+
+
   );
 };
 

@@ -48,7 +48,7 @@ const [employee, setEmployee] = useState(null);
   useEffect(() => {
     const fetchEmployeeData = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/users/profile", {
+        const response = await fetch(`${BASE_URL}/users/profile`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

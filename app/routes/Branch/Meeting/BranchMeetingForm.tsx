@@ -1078,7 +1078,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
   ]);
 
   const [formData, setFormData] = useState({
-    branchcode: "",
+    branchcode: branchcodeForNor,
     title: "",
     notes: "",
     comm_type: "meeting",
@@ -1338,6 +1338,14 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
     }));
   };
 
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+const filteredStaffOptions = staffOptions.filter((person) =>
+  person.person_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  person.person_id.toLowerCase().includes(searchQuery.toLowerCase())
+);
+
   const removeFile = (index) => {
     setFormData((prev) => {
       const updatedFiles = [...prev.doc];
@@ -1353,7 +1361,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
         {
           person_id: person.person_id,
           role: person.role,
-          isdocvisible: formData.comm_type === "doc",
+          isdocvisible: formData.comm_type === "meeting",
         },
       ]);
     }
@@ -1505,6 +1513,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
         field: formData.field,
         custom: customTargets,
         communication_participants: participants,
+        
       };
 
       // Create FormData for the request
@@ -1641,7 +1650,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
           </div>
 
           {/* Document Status (shown only for documents) */}
-          {formData.comm_type === "doc" && (
+          
             <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <File className="inline mr-1" size={14} /> Document Status
@@ -1658,7 +1667,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
                 <option value="rework">Rework</option>
               </select>
             </div>
-          )}
+          
 
           {/* Meeting Link (shown only for meetings) */}
           {formData.comm_type === "meeting" && (
@@ -1770,7 +1779,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
         </div>
 
         {/* File Upload (shown only for documents) */}
-        {formData.comm_type === "doc" && (
+        
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
               <FileUp className="inline mr-1" size={14} /> Documents
@@ -1802,7 +1811,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
               </div>
             )}
           </div>
-        )}
+        
 
         {/* Custom Filters Section (shown only when category is custom) */}
         {formData.category === "custom" && (
@@ -2007,7 +2016,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
             )}
           </div>
 
-          {showParticipants && (
+{/*          {showParticipants && (
             <div className="mt-4 space-y-4">
               <div>
                 <p className="text-xs text-gray-500 mb-2">
@@ -2023,7 +2032,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
                         className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700 rounded"
                       >
                         <span>
-                          {person.person_id} ({person.role})
+                          {person.person_name} ({person.person_id})
                         </span>
                         {participants.some(
                           (p) => p.person_id === person.person_id
@@ -2066,10 +2075,10 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
                         className="flex justify-between items-center p-2 bg-gray-100 dark:bg-gray-700 rounded"
                       >
                         <span>
-                          {participant.person_id} ({participant.role})
+                          {participant.person_name} ({participant.person_id})
                         </span>
                         <div className="flex items-center space-x-2">
-                          {formData.comm_type === "doc" && (
+                          
                             <label className="flex items-center space-x-1">
                               <input
                                 type="checkbox"
@@ -2081,7 +2090,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
                               />
                               <span className="text-xs">View Doc</span>
                             </label>
-                          )}
+                          
                           <button
                             type="button"
                             onClick={() =>
@@ -2098,7 +2107,110 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
                 </div>
               )}
             </div>
-          )}
+          )}*/}
+
+
+
+          	{showParticipants && (
+  <div className="mt-4 space-y-4">
+    <div>
+      <p className="text-xs text-gray-500 mb-2">
+        {formData.category === "custom"
+          ? "Select participants from filtered results"
+          : `Select participants from ${formData.category}`}
+      </p>
+
+      {/* 🔍 Search Input */}
+      <input
+        type="text"
+        placeholder="Search participants..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full p-2 mb-3 border rounded dark:bg-gray-800 dark:border-gray-600"
+      />
+
+      {/* Filtered Options */}
+      {filteredStaffOptions.length > 0 ? (
+<div className="max-h-32 overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredStaffOptions.map((person) => (
+            <div
+              key={person.person_id}
+              className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700 rounded"
+            >
+              <span>
+                {person.person_name} ({person.person_id})
+              </span>
+              {participants.some((p) => p.person_id === person.person_id) ? (
+                <button
+                  type="button"
+                  onClick={() => removeParticipant(person.person_id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <X size={16} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => addParticipant(person)}
+                  className="text-green-500 hover:text-green-700"
+                >
+                  <Check size={16} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+</div>
+
+      ) : (
+        <p className="text-sm text-gray-500">
+          No participants found for "{searchQuery}"
+        </p>
+      )}
+    </div>
+
+    {/* Selected Participants */}
+    {participants.length > 0 && (
+      <div className="mt-4">
+        <p className="text-xs text-gray-500 mb-2">Selected Participants</p>
+        <div className="space-y-2">
+          {participants.map((participant) => (
+            <div
+              key={participant.person_id}
+              className="flex justify-between items-center p-2 bg-gray-100 dark:bg-gray-700 rounded"
+            >
+              <span>
+                {participant.person_name} ({participant.person_id})
+              </span>
+              <div className="flex items-center space-x-2">
+                <label className="flex items-center space-x-1">
+                  <input
+                    type="checkbox"
+                    checked={participant.isdocvisible}
+                    onChange={() => toggleDocVisibility(participant.person_id)}
+                    className="rounded"
+                  />
+                  <span className="text-xs">View Doc</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => removeParticipant(participant.person_id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+)}
+
+
+
         </div>
       </div>
 

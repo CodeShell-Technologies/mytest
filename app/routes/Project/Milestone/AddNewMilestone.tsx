@@ -12,7 +12,7 @@ import {
   Target,
   User,
 } from "lucide-react";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import toast from "react-hot-toast";
 import { AiFillProject } from "react-icons/ai";
 import { ButtonLoader } from "src/component/Loaders/ButtonLoader";
@@ -25,6 +25,11 @@ import useEmployeeStore from "src/stores/useEmployeeStore";
 import { BASE_URL } from "~/constants/api";
 import { useStaffFilter } from "~/routes/hooks/UseStaffFilter";
 import {formatDate} from "../../../../src/utils/dateUtils"
+
+import AsyncSelect from "react-select/async";
+import { useLocation } from "react-router-dom";
+
+
 const AddMilestone = ({ project,onSuccess, onCancel }) => {
   console.log("projectdataaaa>>>>>",project)
   const [loading, setLoading] = useState(false);
@@ -37,11 +42,28 @@ const AddMilestone = ({ project,onSuccess, onCancel }) => {
   const userRole = permissions[0].role;
   const branchCode = useBranchStore((state) => state.branchCodeOptions);
   const branchcodeForNor = useAuthStore((state) => state.branchcode);
+    
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
+  const [departmentDesignations, setDepartmentDesignations] = useState<
+    Record<string, string[]>
+  >({});
+  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+
+  const [staffOptions, setStaffOptions] = useState<{ value: string; label: string }[]>([]);
+  const [isFetchingStaff, setIsFetchingStaff] = useState(false);
+
+
+  const [stafftoOptions, setStafftoOptions] = useState<{ value: string; label: string }[]>([]);
+  const [isFetchingtoStaff, setIsFetchingtoStaff] = useState(false);
+
+
+
     const {
-      departmentOptions,
+      // departmentOptions,
       selectedDepartment,
-      staffOptions,
-      isFetchingStaff,
+      // staffOptions,
+      // isFetchingStaff,
       handleDepartmentChange,
     } = useStaffFilter(project.branchcode);
   const branchCodeOptions =
@@ -128,6 +150,190 @@ const AddMilestone = ({ project,onSuccess, onCancel }) => {
       setLoading(false);
     }
   };
+
+
+
+  //         useEffect(() => {
+  //   async function fetchData() {
+  //     try {
+  //       const [deptRes, desigRes] = await Promise.all([
+  //         fetch("http://localhost:3000/api/getDepartments"),
+  //         fetch("http://localhost:3000/api/getDesignations"),
+  //       ]);
+
+  //       const deptData = await deptRes.json();
+  //       const desigData = await desigRes.json();
+
+  //       // set full dept list
+  //       setDepartments(deptData.data);
+
+  //       // Department options (names only)
+  //       const deptNames = deptData.data.map((d: Department) => d.name).filter(Boolean);
+  //       setDepartmentOptions(deptNames);
+
+  //       // Build mapping { departmentName: [designation1, designation2] }
+  //       const deptDesigs: Record<string, string[]> = {};
+  //       desigData.data.forEach((item: Designation) => {
+  //         const dept = item.department;
+  //         if (!deptDesigs[dept]) {
+  //           deptDesigs[dept] = [];
+  //         }
+  //         deptDesigs[dept].push(item.designation);
+  //       });
+  //       setDepartmentDesignations(deptDesigs);
+  //     } catch (err) {
+  //       console.error("Error fetching data", err);
+  //     }
+  //   }
+
+  //   fetchData();
+  // }, []);
+
+
+
+useEffect(() => {
+  async function fetchData() {
+    try {
+      if (!project.branchcode) return; // ✅ prevent empty requests
+
+      const [deptRes, desigRes] = await Promise.all([
+        fetch(
+          `${BASE_URL}/getDepartments`
+        ),
+        fetch(`${BASE_URL}/getDesignations`),
+      ]);
+
+      const deptData = await deptRes.json();
+      const desigData = await desigRes.json();
+
+      // set full dept list
+      setDepartments(deptData.data);
+
+      // ✅ Department options converted to {value, label}
+      const deptNames = deptData.data
+        .map((d: Department) => d.name)
+        .filter(Boolean)
+        .map((name: string) => ({ value: name, label: name }));
+
+      setDepartmentOptions(deptNames);
+
+      // Build mapping { departmentName: [{value, label}, {value, label}] }
+      const deptDesigs: Record<string, { value: string; label: string }[]> = {};
+      desigData.data.forEach((item: Designation) => {
+        const dept = item.department;
+        if (!deptDesigs[dept]) {
+          deptDesigs[dept] = [];
+        }
+        deptDesigs[dept].push({
+          value: item.designation,
+          label: item.designation,
+        });
+      });
+      setDepartmentDesignations(deptDesigs);
+    } catch (err) {
+      console.error("Error fetching data", err);
+    }
+  }
+
+  fetchData();
+}, [project.branchcode]);
+
+
+  // ✅ Update designation options when department changes
+  useEffect(() => {
+    if (formData.department) {
+      setDesignationOptions(departmentDesignations[formData.department] || []);
+    } else {
+      setDesignationOptions([]);
+    }
+  }, [formData.department, departmentDesignations]);
+
+
+useEffect(() => {
+  async function fetchStaff() {
+    if (!formData.department) {
+      setStaffOptions([]);
+      return;
+    }
+
+    setIsFetchingStaff(true);
+    try {
+      const res = await fetch(`${BASE_URL}/getStaff?department=${encodeURIComponent(formData.department)}`);
+      const data = await res.json();
+
+      if (data?.status && Array.isArray(data.data)) {
+        const options = data.data.map((staff: any) => ({
+          value: staff.staff_id,  // unique id (e.g. "BRCODE_01/02")
+          label: `${staff.firstname} ${staff.lastname} (${staff.designation})`, // display name
+        }));
+        setStaffOptions(options);
+      } else {
+        setStaffOptions([]);
+      }
+    } catch (err) {
+      console.error("Error fetching staff:", err);
+      setStaffOptions([]);
+    } finally {
+      setIsFetchingStaff(false);
+    }
+  }
+
+  fetchStaff();
+}, [formData.department]);
+
+
+
+useEffect(() => {
+  async function fetchtoStaff() {
+    if (!formData.department) {
+      setStafftoOptions([]);
+      return;
+    }
+
+    setIsFetchingtoStaff(true);
+    try {
+      const res = await fetch(`${BASE_URL}/getStaff?department=${encodeURIComponent(formData.department)}`);
+      const data = await res.json();
+
+      if (data?.status && Array.isArray(data.data)) {
+        const options = data.data.map((staff: any) => ({
+          value: staff.staff_id,  // unique id (e.g. "BRCODE_01/02")
+          label: `${staff.firstname} ${staff.lastname} (${staff.designation})`, // display name
+        }));
+        setStafftoOptions(options);
+      } else {
+        setStafftoOptions([]);
+      }
+    } catch (err) {
+      console.error("Error fetching staff:", err);
+      setStafftoOptions([]);
+    } finally {
+      setIsFetchingtoStaff(false);
+    }
+  }
+
+  fetchtoStaff();
+}, [formData.department]);
+
+
+ const loadDeps = (inputValue: string, callback: (options: Option[]) => void) => {
+  const filtered = departmentOptions.filter((c) =>
+    c.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
+  callback(filtered);
+};
+
+const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = staffOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+
+
+
 
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
@@ -280,12 +486,12 @@ const AddMilestone = ({ project,onSuccess, onCancel }) => {
               placeholder="Enter Addtional Amount"
             />
           </div> */}
-        </div>
+        
              <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <Building className="inline mr-1" size={14} /> Department
               </p>
-              <select
+              {/*<select
                 value={selectedDepartment}
                 onChange={(e) => {
                   handleDepartmentChange(e.target.value);
@@ -304,13 +510,59 @@ const AddMilestone = ({ project,onSuccess, onCancel }) => {
                     {dept}
                   </option>
                 ))}
-              </select>
+              </select>*/}
+
+
+{/*                      <select
+          name="department"
+          value={selectedDepartment}
+          onChange={handleChange}
+          className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+          required
+        >
+          <option value="">Select Department</option>
+          {departmentOptions.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
+          ))}
+        </select>*/}
+
+
+
+                     <AsyncSelect
+  cacheOptions
+  defaultOptions={departmentOptions}
+  name="department"
+            className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt- focus:outline-none"
+  loadOptions={(inputValue, callback) => {
+    const filtered = departmentOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  }}
+  onChange={(selected: Option | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      department: selected ? selected.value : "",
+    }));
+  }}
+  value={
+    departmentOptions.find((opt) => opt.value === formData.department) || null
+  }
+  placeholder="Select or search department"
+/>
+
+
+
+
             </div>
-               <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+        
+        </div>       <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <User className="inline mr-1" size={14} /> Select Handler By
               </p>
-              {isFetchingStaff ? (
+              {/*{isFetchingStaff ? (
                 <div className="text-sm text-gray-500 mt-1">
                   Loading staff...
                 </div>
@@ -330,7 +582,46 @@ const AddMilestone = ({ project,onSuccess, onCancel }) => {
                     </option>
                   ))}
                 </select>
-              )}
+              )}*/}
+
+
+                {isFetchingStaff ? (
+    <div className="text-sm text-gray-500 mt-1">Loading staff...</div>
+  ) : (
+    // <select
+    //   name="handler_by"
+    //   value={formData.handler_by}
+    //   onChange={handleChange}
+    //   className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    //   required
+    //   // disabled={!formData.handler_by || staffOptions.length === 0}
+    // >
+    //   <option value="">Select Staff</option>
+    //   {staffOptions.map((option) => (
+    //     <option key={option.value} value={option.value}>
+    //       {option.label}
+    //     </option>
+    //   ))}
+    // </select>
+
+
+
+   <AsyncSelect
+          cacheOptions
+          defaultOptions={staffOptions}
+          name="handler_by"
+          loadOptions={loadStaffs}
+          onChange={(selected: Option | null) =>
+            setFormData({ ...formData, handler_by: selected ? selected.value : "" })
+          }
+          value={staffOptions.find((opt) => opt.value === formData.handler_by) || null}
+          isDisabled={!formData.department || staffOptions.length === 0}
+          placeholder="Select or search handler by"
+        />
+  )}
+
+
+
               {selectedDepartment &&
                 staffOptions.length === 0 &&
                 !isFetchingStaff && (
@@ -343,7 +634,7 @@ const AddMilestone = ({ project,onSuccess, onCancel }) => {
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <User className="inline mr-1" size={14} /> Select Approved Staff Id
               </p>
-              {isFetchingStaff ? (
+    {/*          {isFetchingStaff ? (
                 <div className="text-sm text-gray-500 mt-1">
                   Loading staff...
                 </div>
@@ -363,7 +654,44 @@ const AddMilestone = ({ project,onSuccess, onCancel }) => {
                     </option>
                   ))}
                 </select>
-              )}
+              )}*/}
+
+
+                {isFetchingStaff ? (
+    <div className="text-sm text-gray-500 mt-1">Loading staff...</div>
+  ) : (
+    // <select
+    //   name="approved_staff_id"
+    //   value={formData.approved_staff_id}
+    //   onChange={handleChange}
+    //   className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    //   required
+    //   // disabled={!formData.handler_by || staffOptions.length === 0}
+    // >
+    //   <option value="">Select Staff</option>
+    //   {staffOptions.map((option) => (
+    //     <option key={option.value} value={option.value}>
+    //       {option.label}
+    //     </option>
+    //   ))}
+    // </select>
+
+
+
+   <AsyncSelect
+          cacheOptions
+          defaultOptions={staffOptions}
+          name="approved_staff_id"
+          loadOptions={loadStaffs}
+          onChange={(selected: Option | null) =>
+            setFormData({ ...formData, approved_staff_id: selected ? selected.value : "" })
+          }
+          value={staffOptions.find((opt) => opt.value === formData.approved_staff_id) || null}
+          isDisabled={!formData.department || staffOptions.length === 0}
+          placeholder="Select or search client"
+        />
+  )}
+
               {selectedDepartment &&
                 staffOptions.length === 0 &&
                 !isFetchingStaff && (

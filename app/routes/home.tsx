@@ -23,7 +23,10 @@ import DynamicDoughnutChart from "src/component/graphComponents/DynamicDoughnutC
 import KPIBarChart from "src/component/graphComponents/KpiChart";
 import NotificationPanel from "src/component/Notification";
 import { FaAward, FaFileInvoice, FaHandsHelping, FaProjectDiagram, FaUser, FaUserPlus, FaUsers, FaUserSlash, FaUserTie, FaUserTimes } from "react-icons/fa";
-import { useState } from "react";
+import { useState,useEffect } from "react";
+
+import { useAuthStore } from "src/stores/authStore";
+
 import {
   FaCheckCircle,
   FaClock,
@@ -35,7 +38,9 @@ import DynamicLineGraph from "src/component/graphComponents/DynamicLineGraph";
 import DynamicPieChart from "src/component/graphComponents/DynamicPieChart";
 import PaymentProgressCard from "src/component/graphComponents/ProgressCard";
 import HrGraphs from "./HommeGraphsPages/HrGraphs";
+import SampleDashboard from "./Employee/SampleDashboard";
 import AccountantDashboard from "./HommeGraphsPages/AccountantDashboard";
+// import EmpDashboard from "./HommeGraphsPages/EmployeeDashboard";
 const Dashboard = () => {
   const theme = "light";
   const dougntChartData = [
@@ -116,6 +121,9 @@ const Dashboard = () => {
     ],
   };
 
+  // const [hydrated, setHydrated] = useState(false);
+
+
   const pieChartData = [
     {
       title: "Project Status",
@@ -155,6 +163,33 @@ const Dashboard = () => {
       label: "Overdue",
     },
   ];
+
+  const token = useAuthStore((state) => state.accessToken);
+  const userRole = useAuthStore((state) => state.role);
+
+
+
+ const [hydrated, setHydrated] = useState(false);
+
+  // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+  if (!hydrated) {
+    return <div>Loading...</div>; // wait until state is restored
+  }
+
+  console.log("AccessToken:", token);
+  console.log("Role:", userRole);
+
   return (
     <>
       {/* <div>
@@ -637,8 +672,33 @@ const Dashboard = () => {
           </div>
         </div>
       </div> */}
-      <HrGraphs/>
-      <AccountantDashboard/>
+      {/*<SampleDashboard/>*/}
+      {/*<EmpDashboard/>*/}
+      {/*<HrGraphs/>*/}
+      {/*<AccountantDashboard/>*/}
+{/*
+    {token}
+
+    {userRole}*/}
+
+      {userRole === "superadmin" && (
+        <>
+          <SampleDashboard />
+          <HrGraphs />
+          <AccountantDashboard />
+        </>
+      )}
+
+      {userRole === "admin" && (
+        <>
+          <HrGraphs />
+          <AccountantDashboard />
+        </>
+      )}
+
+      {userRole !== "superadmin" && userRole !== "admin" && (
+        <SampleDashboard />
+      )}
     </>
   );
 };

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import useBranchStore from "src/stores/useBranchStore";
 import useLeadsStore from "src/stores/LeadsStore";
+import AsyncSelect from "react-select/async";
 
 const ClientAddForm = ({ onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
@@ -30,13 +31,15 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
   const [leadOptions, setLeadOptions] = useState([]);
   const [isFetchingLeads, setIsFetchingLeads] = useState(false);
 
+  const thisbranch = useAuthStore((state) => state.branchcode);
+  console.log(thisbranch);
   const branchCodeOption =
     userRole === "superadmin"
       ? branchCode
       : [{ value: branchcodeForNor, label: branchcodeForNor }];
 
   const [formData, setFormData] = useState({
-    branchcode: "",
+    branchcode: thisbranch,
     lead_id: "",
     client_name: "",
     company_name: "",
@@ -137,6 +140,13 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
         }));
       }
     }
+  };
+
+  const loadBranches = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = branchCodeOption.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
   };
 
   const handleContactChange = (index, e) => {
@@ -247,7 +257,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Hash className="inline mr-1" size={14} /> Branch Code
             </p>
-            <select
+    {/*        <select
               name="branchcode"
               value={formData.branchcode}
               onChange={handleChange}
@@ -260,7 +270,26 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+
+               <AsyncSelect
+  cacheOptions
+  defaultOptions={branchCodeOption}
+  defaultValue={
+    branchCodeOption.find((opt) => opt.value === formData.branchcode) || null
+  }
+  name="branchcode"
+  loadOptions={loadBranches}
+  onChange={(selected: Option | null) => {
+    const fakeEvent = {
+      target: { value: selected ? selected.value : "" },
+    };
+    handleChange(fakeEvent);
+  }}
+  placeholder="Select or search branch"
+/>
+
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">

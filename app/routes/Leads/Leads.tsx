@@ -22,7 +22,7 @@ import useLeadsStore from "src/stores/LeadsStore";
 import AddNewLeadForm from "./AddNewLead";
 import EditLeadForm from "./EditLeadsForm";
 import LeadClientForm from "../Clients/LeadClientForm";
-
+import { useNavigate } from "react-router-dom";
 const Leads = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,6 +49,11 @@ const Leads = () => {
   const { fetchLeads, isStoreLoading } = useLeadsStore();
   const branchCodeOptions = useBranchStore((state) => state.branchCodeOptions);
   const branchcode = useAuthStore((state) => state.branchcode);
+  const [filters, setFilters] = useState({});
+const [sortConfig, setSortConfig] = useState(null);
+
+ const navigate = useNavigate();
+
   const statusOptions = [
     { value: "", label: "All Branches" },
     { value: "active", label: "Active Branches" },
@@ -342,6 +347,14 @@ const handleConvertSuccess=()=>{
                 <FileDown className="mr-1" />
                 {!isMobile && "Export Excel"}
               </button>
+
+                <button
+                onClick={() => navigate("/leadscovert")}
+                className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
+              >
+                {!isMobile && "Lead Convertion"} 
+              </button>
+
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
@@ -398,12 +411,29 @@ const handleConvertSuccess=()=>{
           )}
 
           <div className="overflow-x-auto">
-            <DataTable
+          {/*  <DataTable
               thead={thead}
               tbody={tbody}
               responsive={true}
               className="min-w-full"
-            />
+              enableFilters={true}
+  enableSorting={true}
+  onRowDoubleClick={(row) => {
+
+    navigate(`/leadsview/${row.id}`);
+  }}
+            />*/}
+
+    <DataTable
+  thead={thead}
+  tbody={tbody}
+  className="min-w-full"
+  enableFilters={true}
+  enableSorting={true}
+  onRowDoubleClick={(row) => navigate(`/leadsview/${row.id}`)}
+/>
+
+
           </div>
         </div>
 

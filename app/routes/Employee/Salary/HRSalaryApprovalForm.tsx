@@ -57,7 +57,7 @@ const HRSalaryApprovalForm = ({ salaryRequest, onSuccess, onCancel }) => {
 
     try {
       const response = await axios.put(
-        `${BASE_URL}/api/users/hr_rating/edit`,
+        `${BASE_URL}/users/hr_rating/edit`,
         {
           reviewData: {
             performance_id: formData.performance_id,

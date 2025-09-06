@@ -110,35 +110,82 @@ function Login() {
     }
   }, [isVibrating]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError(null);
+  //   setIsLoading(true);
 
-    try {
-      const response = await axios.post(`${BASE_URL}/users/login`, formData);
-      if (response?.status === 201) {
-        setAuthData({
-          branchcode: response?.data?.data[0].branchcode,
-          staff_id: response?.data.data[0].staff_id,
-          accessToken: response.data.token.accessToken,
-          refreshToken: response.data.token.refreshToken,
-          isActive: response.data.data[0]?.status,
-          permissions: response.data.roleAccess,
-          role: response.data.data[0].role,
-        });
-        navigate("/");
-      }
-    } catch (error: any) {
-      console.error("Login error:", error?.response?.data?.error);
-      setError(
-        error?.response?.data?.error || "Login failed. Please try again."
-      );
-      setIsVibrating(true);
-    } finally {
-      setIsLoading(false);
+  //   try {
+  //     const response = await axios.post(`${BASE_URL}/users/login`, formData);
+  //     if (response?.status === 201) {
+  //       setAuthData({
+  //         branchcode: response?.data?.data[0].branchcode,
+  //         staff_id: response?.data.data[0].staff_id,
+  //         accessToken: response.data.token.accessToken,
+  //         refreshToken: response.data.token.refreshToken,
+  //         isActive: response.data.data[0]?.status,
+  //         permissions: response.data.roleAccess,
+  //         role: response.data.data[0].role,
+  //       });
+
+          
+
+  //       navigate("/");
+  //     }
+  //   } catch (error: any) {
+  //     console.error("Login error:", error?.response?.data?.error);
+  //     setError(
+  //       error?.response?.data?.error || "Login failed. Please try again."
+  //     );
+  //     setIsVibrating(true);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(null);
+  setIsLoading(true);
+
+  try {
+    const response = await axios.post(`${BASE_URL}/users/login`, formData);
+
+    if (response?.status === 201) {
+      const userData = response.data.data[0];
+      const { accessToken, refreshToken } = response.data.token; // destructure tokens
+
+      // Set auth state (accessToken is string, safe to render)
+      setAuthData({
+        branchcode: userData.branchcode,
+        staff_id: userData.staff_id,
+        accessToken: accessToken, // string
+        isActive: userData.status,
+        permissions: response.data.roleAccess,
+        role: userData.role,
+      });
+
+      // Store tokens in localStorage for persistence
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+      localStorage.setItem("userId", userData.staff_id);
+      localStorage.setItem("role", userData.role);
+      localStorage.setItem("brcode", userData.branchcode);
+
+      navigate("/"); // redirect to dashboard/home
     }
-  };
+  } catch (error: any) {
+    console.error("Login error:", error?.response?.data?.error);
+    setError(error?.response?.data?.error || "Login failed. Please try again.");
+    setIsVibrating(true);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

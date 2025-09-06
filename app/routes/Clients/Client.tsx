@@ -1,6 +1,8 @@
 
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import DataTable from "src/component/DataTable";
 import CustomPagination from "src/component/CustomPagination";
 import SearchInput from "src/component/SearchInput";
@@ -46,6 +48,9 @@ const Client = () => {
   const [showFilters, setShowFilters] = useState(false);
   const token = useAuthStore((state) => state.accessToken);
   const [deleteType, setDeleteType] = useState("permanent");
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
+const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
+
   const {
     branches,
     managerOptions,
@@ -129,6 +134,74 @@ const Client = () => {
     fetchBranches(token);
     getClient();
   };
+
+
+    const handleSort = (key: string) => {
+  setSortConfig((prev) => {
+    if (!prev || prev.key !== key) {
+      return { key, direction: "asc" };
+    }
+    if (prev.direction === "asc") return { key, direction: "desc" };
+    return null; // reset sort
+  });
+};
+
+
+
+
+
+const handleFilterChange = (key: string, value: string) => {
+  setColumnFilters((prev) => ({ ...prev, [key]: value }));
+};
+
+
+const processedData = data
+  .filter((row) =>
+    Object.keys(columnFilters).every((key) => {
+      if (!columnFilters[key]) return true;
+      let cellValue = "";
+
+      if (key === "designation") {
+        cellValue = row.contacts.map((c) => c.designation).join(", ");
+      } else if (key === "contacts_phone") {
+        cellValue = row.contacts.map((c) => c.phone).join(", ");
+      } else {
+        cellValue = row[key]?.toString() ?? "";
+      }
+
+      return cellValue.toLowerCase().includes(columnFilters[key].toLowerCase());
+    })
+  )
+  .sort((a, b) => {
+    if (!sortConfig) return 0;
+    let aVal: any, bVal: any;
+
+    if (sortConfig.key === "designation") {
+      aVal = a.contacts.map((c) => c.designation).join(", ");
+      bVal = b.contacts.map((c) => c.designation).join(", ");
+    } else if (sortConfig.key === "contacts_phone") {
+      aVal = a.contacts.map((c) => c.phone).join(", ");
+      bVal = b.contacts.map((c) => c.phone).join(", ");
+    } else {
+      aVal = a[sortConfig.key];
+      bVal = b[sortConfig.key];
+    }
+
+    aVal = (aVal || "").toString().toLowerCase();
+    bVal = (bVal || "").toString().toLowerCase();
+
+    if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+
+
+
+
+
+
+
   const handleEditSuccess = () => {
     setShowEditModal(false);
     toast.success("Client Update Succesfully!");
@@ -214,74 +287,196 @@ const Client = () => {
     setCurrentPage(1);
   };
 
-  const thead = () => [
-    { data: "Client Code" },
-    { data: "Branch Code" },
-    { data: "Client Name" },
-    { data: "Company Name" },
-    { data: "Mobile" },
-    { data: "Designation" },
-    { data: "Mobile" },
-    { data: "Status" },
-    { data: "Actions", className: "text-center" },
-  ];
+  // const thead = () => [
+  //   { data: "Client Code" },
+  //   { data: "Branch Code" },
+  //   { data: "Client Name" },
+  //   { data: "Company Name" },
+  //   { data: "Mobile" },
+  //   { data: "Designation" },
+  //   { data: "Mobile" },
+  //   { data: "Status" },
+  //   { data: "Actions", className: "text-center" },
+  // ];
+ const navigate = useNavigate();
+  const columns = [
+  { key: "client_code", label: "Client Code" },
+  { key: "branchcode", label: "Branch Code" },
+  { key: "client_name", label: "Client Name" },
+  { key: "company_name", label: "Company Name" },
+  { key: "mobile", label: "Mobile" },
+  { key: "designation", label: "Designation" },
+  { key: "alt_mobile", label: "Alternate Mobile" },
+  { key: "status", label: "Status" },
+  { key: "actions", label: "Actions", sortable: false, filterable: false, className: "text-center" },
+];
 
-  const tbody = () => {
-    if (!data) return [];
 
-    return data.map((client, index) => ({
-      data: [
-        { data: client.client_code },
-        { data: client.branchcode },
-        { data: client.client_name },
-        { data: client.company_name },
-        { data: client.primary_phone},
-        { data: client.contacts.map(c => c.designation).join(', ') },
-        { data: client.contacts.map(c => c.phone).join(', ') },
-        {
-          data: (
-            <div
-              className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${client.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full mr-2 ${client.status === "active" ? "bg-green-800" : "bg-red-700"}`}
-              ></span>
-              {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
-            </div>
-          ),
-        },
-        {
-          data: (
-            <div className="flex justify-center gap-2">
-              <Link to={`/branch/${client.id}`}>
+const thead = () =>
+  columns.map((col) => ({
+    data: (
+      <div className="flex flex-col">
+        {/* Sorting */}
+        <span
+          className={`cursor-pointer ${col.className || ""}`}
+          onClick={() => col.sortable !== false && handleSort(col.key)}
+        >
+          {col.label}
+          {sortConfig?.key === col.key &&
+            (sortConfig.direction === "asc" ? " 🔼" : " 🔽")}
+        </span>
+
+        {/* Filtering */}
+        {col.filterable === false ? null : (
+          <input
+            type="text"
+            placeholder={`Search ${col.label}`}
+            value={columnFilters[col.key] || ""}
+            onChange={(e) => handleFilterChange(col.key, e.target.value)}
+            className="w-full text-xs border rounded px-1 py-0.5 mt-1"
+          />
+        )}
+      </div>
+    ),
+    className: col.className,
+  }));
+
+  // const tbody = () => {
+  //   if (!data) return [];
+
+  //   return data.map((client, index) => ({
+  //     data: [
+  //       { data: client.client_code },
+  //       { data: client.branchcode },
+  //       { data: client.client_name },
+  //       { data: client.company_name },
+  //       { data: client.primary_phone},
+  //       { data: client.contacts.map(c => c.designation).join(', ') },
+  //       { data: client.contacts.map(c => c.phone).join(', ') },
+  //       {
+  //         data: (
+  //           <div
+  //             className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${client.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+  //           >
+  //             <span
+  //               className={`w-2 h-2 rounded-full mr-2 ${client.status === "active" ? "bg-green-800" : "bg-red-700"}`}
+  //             ></span>
+  //             {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
+  //           </div>
+  //         ),
+  //       },
+  //       {
+  //         data: (
+  //           <div className="flex justify-center gap-2">
+  //             <Link to={`/client_view?client_code=${client.client_code}`}>
+                
+  //               <button
+  //                 className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //                 title="View"
+  //               >
+  //                 <Eye size={18} />
+  //               </button>
+  //             </Link>
+  //             <button
+  //               className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleEditBranch(client)}
+  //               title="Edit"
+  //             >
+  //               <SquarePen size={18} />
+  //             </button>
+  //             <button
+  //               className="p-1 text-red-600 rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleDeleteClient(client)}
+  //               title="Delete"
+  //             >
+  //               <Trash2 size={18} />
+  //             </button>
+  //           </div>
+  //         ),
+  //         className: "action-cell",
+  //       },
+  //     ],
+  //   }));
+  // };
+
+
+const tbody = () => {
+    if (!processedData) return [];
+
+    return processedData.map((client) => {
+      const viewUrl = `/client_view?client_code=${client.client_code}`;
+
+      return {
+        data: [
+          { data: client.client_code },
+          { data: client.branchcode },
+          { data: client.client_name },
+          { data: client.company_name },
+          { data: client.primary_phone },
+          { data: client.contacts.map((c) => c.designation).join(", ") },
+          { data: client.contacts.map((c) => c.phone).join(", ") },
+          {
+            data: (
+              <div
+                className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+                  client.status === "active"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full mr-2 ${
+                    client.status === "active" ? "bg-green-800" : "bg-red-700"
+                  }`}
+                ></span>
+                {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
+              </div>
+            ),
+          },
+          {
+            data: (
+              <div className="flex justify-center gap-2">
+                <Link to={viewUrl}>
+                  <button className="p-1 text-blue-700" title="View">
+                    <Eye size={18} />
+                  </button>
+                </Link>
                 <button
-                  className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
-                  title="View"
+                  className="p-1 text-[var(--color-primary)]"
+                  onClick={() => handleEditBranch(client)}
+                  title="Edit"
                 >
-                  <Eye size={18} />
+                  <SquarePen size={18} />
                 </button>
-              </Link>
-              <button
-                className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
-                onClick={() => handleEditBranch(client)}
-                title="Edit"
+                <button
+                  className="p-1 text-red-600"
+                  onClick={() => handleDeleteClient(client)}
+                  title="Delete"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            ),
+            className: "action-cell",
+          },
+        ].map((col, idx) => ({
+          ...col,
+          data:
+            idx === 8 ? (
+              col.data
+            ) : (
+              <div
+                onDoubleClick={() => navigate(viewUrl)} // ✅ SPA navigation
+                className="w-full h-full cursor-pointer"
               >
-                <SquarePen size={18} />
-              </button>
-              <button
-                className="p-1 text-red-600 rounded hover:text-gray-500 dark:hover:text-gray-300"
-                onClick={() => handleDeleteClient(client)}
-                title="Delete"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ),
-          className: "action-cell",
-        },
-      ],
-    }));
+                {col.data}
+              </div>
+            ),
+        })),
+      };
+    });
   };
+
 
   const handleOnExport = () => {
     const wb = XLSX.utils.book_new();
@@ -418,6 +613,7 @@ const Client = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Create New Client"
+        closeOnOutsideClick={false}
       >
         <ClientAddForm
           onSuccess={handleCreateSuccess}
@@ -431,6 +627,7 @@ const Client = () => {
         className="w-full md:w-[600px]"
         onClose={() => setShowDeleteModal(false)}
         title="Delete Client"
+        closeOnOutsideClick={false}
       >
         {/* <div className="flex flex-col gap-6 justify-center items-center">
           <p className="text-gray-500 text-lg font-bold text-center">
@@ -505,6 +702,7 @@ const Client = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowEditModal(false)}
         title="Edit Client"
+        closeOnOutsideClick={false}
       >
         <ClientEditForm
           client={selectedClient}

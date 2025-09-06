@@ -306,6 +306,16 @@ const InvoiceList = () => {
                 placeholder="Items per page"
                 className="w-full md:w-[150px]"
               />
+
+
+              <button
+      onClick={() => navigate("/invoice_create")}
+      className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
+    >
+      + New Invoice
+    </button>
+
+
               <button
                 onClick={handleOnExport}
                 className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"

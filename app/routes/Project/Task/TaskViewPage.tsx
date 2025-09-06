@@ -651,6 +651,7 @@ const TaskViewPage = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowMeetingModal(false)}
         title="Create Meeting"
+        closeOnOutsideClick={false}
       >
         <TaskMeetingForm
           taskData={taskData}
@@ -663,11 +664,13 @@ const TaskViewPage = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Add Task Member Form"
+        closeOnOutsideClick={false}
       >
         <AddNewTaskMember
           onSuccess={handleCreateSuccess}
           onCancel={() => setShowCreateModal(false)}
           taskData={selectedTask}
+          closeOnOutsideClick={false}
         />
       </Modal>
     </>

@@ -36,6 +36,15 @@ const LeadClientForm = ({ lead, onSuccess, onCancel }) => {
     (state) => state.campaigncodeOptions
   );
 
+
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
+  const [departmentDesignations, setDepartmentDesignations] = useState<
+    Record<string, string[]>
+  >({});
+  const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+
+
   const [formData, setFormData] = useState({
     branchcode: "",
     lead_id: "",
@@ -98,6 +107,55 @@ const LeadClientForm = ({ lead, onSuccess, onCancel }) => {
     { value: "inactive", label: "Inactive" },
     { value: "blacklisted", label: "Blacklisted" },
   ];
+
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [deptRes, desigRes] = await Promise.all([
+          fetch(`${BASE_URL}/getDepartments`),
+          fetch(`${BASE_URL}/getDesignations`),
+        ]);
+
+        const deptData = await deptRes.json();
+        const desigData = await desigRes.json();
+
+        // set full dept list
+        setDepartments(deptData.data);
+
+        // Department options (names only)
+        const deptNames = deptData.data.map((d: Department) => d.name).filter(Boolean);
+        setDepartmentOptions(deptNames);
+
+        // Build mapping { departmentName: [designation1, designation2] }
+        const deptDesigs: Record<string, string[]> = {};
+        desigData.data.forEach((item: Designation) => {
+          const dept = item.department;
+          if (!deptDesigs[dept]) {
+            deptDesigs[dept] = [];
+          }
+          deptDesigs[dept].push(item.designation);
+        });
+        setDepartmentDesignations(deptDesigs);
+      } catch (err) {
+        console.error("Error fetching data", err);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  // ✅ Update designation options when department changes
+  useEffect(() => {
+    if (formData.department) {
+      setDesignationOptions(departmentDesignations[formData.department] || []);
+    } else {
+      setDesignationOptions([]);
+    }
+  }, [formData.department, departmentDesignations]);
+
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;

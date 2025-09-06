@@ -1767,7 +1767,7 @@ const ProjectMeetingForm = ({ project, onSuccess, onCancel }) => {
         </div>
 
         {/* File Upload (shown only for documents) */}
-        {formData.comm_type === "doc" && (
+        
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
               <FileUp className="inline mr-1" size={14} /> Documents
@@ -1799,7 +1799,7 @@ const ProjectMeetingForm = ({ project, onSuccess, onCancel }) => {
               </div>
             )}
           </div>
-        )}
+       
 
         {/* Custom Filters Section (shown only when category is custom) */}
         {formData.category === "custom" && (

@@ -516,6 +516,7 @@ import useBranchStore from "src/stores/useBranchStore";
 import useEmployeeStore from "src/stores/useEmployeeStore";
 import { BASE_URL } from "~/constants/api";
 import{formatDate} from '../../../../src/utils/dateUtils';
+import AsyncSelect from "react-select/async";
 
 const AddNewTaskForMilestone = ({milestone, onSuccess, onCancel }) => {
   console.log("milestoneedataa", milestone);
@@ -538,7 +539,7 @@ const AddNewTaskForMilestone = ({milestone, onSuccess, onCancel }) => {
   const token = useAuthStore((state) => state.accessToken);
 
   const [formData, setFormData] = useState({
-    branchcode: "",
+    branchcode: milestone.branchcode,
     milestone_code: milestone.milestone_code,
     task_title: "",
     task_priority: "",
@@ -769,6 +770,52 @@ const AddNewTaskForMilestone = ({milestone, onSuccess, onCancel }) => {
     }
   };
 
+
+
+
+const loadTeams = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = teamOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = teamMembers.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+    const loadProjects = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = projectOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+      const loadMilestones = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = milestoneOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+        const loadBranches = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = branchCodeOption.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+
+
+
+
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
       {error && (
@@ -788,7 +835,7 @@ const AddNewTaskForMilestone = ({milestone, onSuccess, onCancel }) => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Hash className="inline mr-1" size={14} /> Branch Code
             </p>
-            <select
+           {/* <select
               name="branchcode"
               value={formData.branchcode}
               onChange={handleChange}
@@ -801,14 +848,37 @@ const AddNewTaskForMilestone = ({milestone, onSuccess, onCancel }) => {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+             <AsyncSelect
+          cacheOptions
+          defaultOptions={branchCodeOption}
+          name="branchcode"
+          loadOptions={loadBranches}
+       onChange={(selected: Option | null) =>
+    setFormData((prev) => ({
+      ...prev,
+      branchcode: selected ? selected.value : "",
+    }))
+  }
+    value={
+    branchCodeOption.find((opt) => opt.value === formData.branchcode) || null
+  }
+          // isDisabled={!formData.department || staffOptions.length === 0}
+          placeholder="Select or search branch"
+        />
+
+
+
+
+
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Users className="inline mr-1" size={14} /> Select Team
             </p>
-            <select
+{/*            <select
               name="team_id"
               value={formData.team_id}
               onChange={handleChange}
@@ -822,7 +892,26 @@ const AddNewTaskForMilestone = ({milestone, onSuccess, onCancel }) => {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+                             <AsyncSelect
+          cacheOptions
+          defaultOptions={teamOptions}
+          name="team_id"
+          loadOptions={loadTeams}
+          onChange={(selected: Option | null) =>
+    setFormData((prev) => ({
+      ...prev,
+      team_id: selected ? selected.value : "",
+    }))
+  }
+          value={teamOptions.find((opt) => opt.value === formData.team_id) || null}
+          isDisabled={teamOptions.length === 0}
+          placeholder="Select or search team"
+        />
+
+
+
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
@@ -968,7 +1057,7 @@ const AddNewTaskForMilestone = ({milestone, onSuccess, onCancel }) => {
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 <User className="inline mr-1" size={14} /> Team Member
               </p>
-              <select
+          {/*    <select
                 name="staff_id"
                 value={collaborate.staff_id}
                 onChange={(e) => handleCollaborateChange(index, e)}
@@ -982,7 +1071,45 @@ const AddNewTaskForMilestone = ({milestone, onSuccess, onCancel }) => {
                     {member.staff_name} ({member.department})
                   </option>
                 ))}
-              </select>
+              </select>*/}
+
+                 <AsyncSelect
+  cacheOptions
+  defaultOptions={teamMembers.map((member) => ({
+    value: member.staff_id,
+    label: `${member.staff_name} (${member.staff_id})`,
+  }))}
+  loadOptions={(inputValue: string) =>
+    Promise.resolve(
+      teamMembers
+        .filter(
+          (member) =>
+            member.staff_name.toLowerCase().includes(inputValue.toLowerCase()) ||
+            member.staff_id.toLowerCase().includes(inputValue.toLowerCase())
+        )
+        .map((member) => ({
+          value: member.staff_id,
+          label: `${member.staff_name} (${member.staff_id})`,
+        }))
+    )
+  }
+  isDisabled={!formData.team_id}
+  value={
+    collaborate.staff_id
+      ? {
+          value: collaborate.staff_id,
+          label: `${collaborate.staff_name} (${collaborate.staff_id})`,
+        }
+      : null
+  }
+  onChange={(selectedOption) =>
+    handleCollaborateChange(index, {
+      target: { name: "staff_id", value: selectedOption?.value ?? "" },
+    })
+  }
+/>
+
+              
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">

@@ -18,7 +18,7 @@ import { Link } from "react-router";
 import { useAuthStore } from "src/stores/authStore";
 import useBranchStore from "src/stores/useBranchStore";
 import AddNewTaskForm from "./AddNewFinalFile";
-
+import { BASE_URL, toastposition } from "~/constants/api";
 interface Document {
   uri: string;
   fileType: string;
@@ -136,7 +136,7 @@ useEffect(() => {
     const fetchDocuments = async () => {
       try {
         const res = await fetch(
-          `http://localhost:3000/api/final-documents/${project_code}`
+          `${BASE_URL}/final-documents/${project_code}`
         );
         const data = await res.json();
 
@@ -273,7 +273,7 @@ const handleSubmit = async () => {
   }
 
   try {
-    await fetch("http://localhost:3000/api/final_documents/upload", {
+    await fetch(`${BASE_URL}/final_documents/upload`, {
       method: "POST",
       body: data,
     });

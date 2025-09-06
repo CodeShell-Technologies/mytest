@@ -12,6 +12,7 @@ import * as XLSX from "xlsx";
 import { Link } from "react-router";
 import AddSalaryForm from "~/routes/Employee/Salary/AddSalary";
 import { useAuthStore } from "src/stores/authStore";
+import { BASE_URL, toastposition } from "~/constants/api";
 
 
 const ProjectTimesheet = ({projectData}) => {
@@ -76,7 +77,7 @@ const [selectedendDate, setSelectedendDate] = useState("");
     try {
       // const token = localStorage.getItem('token');
      const response = await axios.get(
-  `http://localhost:3000/api/project/task/checkinout/read?project_code=${project_code}`,
+  `${BASE_URL}/project/task/checkinout/read?project_code=${project_code}`,
   {
     headers: {
       Authorization: `Bearer ${token}`,

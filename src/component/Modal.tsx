@@ -20,29 +20,33 @@
 
 import { CgClose } from "react-icons/cg";
 
-const Modal = ({ isVisible, onClose, children, className,title }) => {
+const Modal = ({ isVisible, onClose, children, className,title 
+,closeOnOutsideClick = true
+}) => {
   if (!isVisible) return null;
 
-  const handleClick = (e) => {
-    if (e.target.id === 'wrapper') onClose();
+ const handleClick = (e) => {
+    if (closeOnOutsideClick && e.target.id === "wrapper") {
+      onClose();
+    }
   };
 
   return (
-    <div 
+    <div
       id="wrapper"
       onClick={handleClick}
       className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex justify-center items-center p-4"
     >
-      <div 
-        className={` max-w-2xl max-h-[90vh] flex flex-col ${className} w-full`}
-        onClick={(e) => e.stopPropagation()}
+      <div
+        className={`max-w-2xl max-h-[90vh] flex flex-col ${className} w-full`}
+        onClick={(e) => e.stopPropagation()} // stop bubbling inside
       >
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden flex flex-col">
           <div className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-100 h-[80px]">
-            <h3 className="text-xl font-semibold text-red-700  bg-clip-text">
+            <h3 className="text-xl font-semibold text-red-700 bg-clip-text">
               {title}
             </h3>
-            <button 
+            <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700 hover-effect dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
               aria-label="Close modal"
@@ -50,13 +54,9 @@ const Modal = ({ isVisible, onClose, children, className,title }) => {
               <CgClose size={24} />
             </button>
           </div>
-          
+
           {/* Scrollable content */}
-          <div className="overflow-y-auto p-4 flex-1">
-            {children}
-          </div>
-          
-      
+          <div className="overflow-y-auto p-4 flex-1">{children}</div>
         </div>
       </div>
     </div>

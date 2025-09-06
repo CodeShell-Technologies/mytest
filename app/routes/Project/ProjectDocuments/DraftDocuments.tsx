@@ -181,6 +181,7 @@ import { Link } from "react-router";
 import { useAuthStore } from "src/stores/authStore";
 import useBranchStore from "src/stores/useBranchStore";
 import AddNewTaskForm from "./AddNewDraftFile";
+import { BASE_URL } from "~/constants/api";
 
 interface Document {
   uri: string;
@@ -299,16 +300,18 @@ useEffect(() => {
     const fetchDocuments = async () => {
       try {
         const res = await fetch(
-          `http://localhost:3000/api/draft-documents/${project_code}`
+          `${BASE_URL}/draft-documents/${project_code}`
         );
         const data = await res.json();
 
         // Transform data into DocViewer format
-        const formattedDocs = data.documents.map((doc) => ({
-          ...doc,
-          uri: `/${doc.uri}`, // prepend domain
-        }));
+// const API_BASE_URL = "http://localhost:3000"; // backend port
+const API_BASE_URL = "https://almino-testing.onrender.com"; // backend port
 
+const formattedDocs = data.documents.map((doc) => ({
+  ...doc,
+  uri: `${API_BASE_URL}${doc.uri.startsWith("/") ? doc.uri : "/" + doc.uri}`,
+}));
         setDocuments(formattedDocs);
 
         // Select first document by default
@@ -436,7 +439,7 @@ const handleSubmit = async () => {
   }
 
   try {
-    await fetch("http://localhost:3000/api/draft_documents/upload", {
+    await fetch(`${BASE_URL}/draft_documents/upload`, {
       method: "POST",
       body: data,
     });

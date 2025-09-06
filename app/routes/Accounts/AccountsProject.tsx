@@ -303,18 +303,18 @@ const branchcode=useAuthStore((state)=>state.branchcode)
         {
           data: (
             <div className="flex  justify-center gap-2">
-              <Link to={`/project/${project.project_code}`}>
+              <Link to={`/projectaccount/${project.project_code}`}>
                 <button className=" px-4 py-2 dark:text-blue-600 text-blue-700 rounded-sm">
                   <Eye className="inline" size={20} />
                 </button>
               </Link>
-              <button
+              {/*<button
                 className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
                 onClick={() => handleEditBranch(project)}
                 title="Pay Request"
               >
                 <FaMoneyBill size={18} />
-              </button>
+              </button>*/}
               <button
                 className="p-1 text-red-600 rounded hover:text-gray-500 dark:hover:text-gray-300"
                 onClick={() => handleDeleteBranch(project)}
@@ -494,6 +494,8 @@ const handleMeetingSuccess=()=>{
      {activeTab === "payrequest" && (
       <InvoiceList/>
      )}
+
+     
       </div>
 
       <Modal

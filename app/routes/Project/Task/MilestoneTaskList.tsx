@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import DataTable from "src/component/DataTable";
 import CustomPagination from "src/component/CustomPagination";
 import SearchInput from "src/component/SearchInput";
@@ -264,113 +264,342 @@ const MilestoneTaskList = () => {
     setCurrentPage(1);
   };
 
-  const thead = () => [
-    { data: "id" },
-    { data: "Branch Code" },
-    { data: "Milestone Name" },
-    { data: "Task Name" },
+ // const navigate = useNavigate();
 
-    { data: "Duration Days" },
+  // --- Sorting & Filtering State ---
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [columnFilters, setColumnFilters] = useState({});
 
-    { data: "Participant Count" },
-    { data: "Task Priority" },
-    { data: "Start Date" },
-    { data: "End Date" },
-    { data: "Handle By" },
-    { data: "Status" },
-    { data: "Actions", className: "text-center" },
+  // --- Columns ---
+  const columns = [
+    { key: "id", label: "ID" },
+    { key: "branchcode", label: "Branch Code" },
+    { key: "milestonetitle", label: "Milestone Name" },
+    { key: "task_title", label: "Task Name" },
+    { key: "duration_days", label: "Duration Days" },
+    { key: "participant_count", label: "Participant Count" },
+    { key: "task_priority", label: "Task Priority" },
+    { key: "start_date", label: "Start Date" },
+    { key: "end_date", label: "End Date" },
+    { key: "handler_by", label: "Handle By" },
+    { key: "status", label: "Status" },
+    { key: "actions", label: "Actions", sortable: false, filterable: false, className: "text-center" },
   ];
 
-  const tbody = () => {
+  // --- Sorting handler ---
+  const handleSort = (key) => {
+    if (sortConfig.key === key) {
+      setSortConfig({
+        key,
+        direction: sortConfig.direction === "asc" ? "desc" : "asc",
+      });
+    } else {
+      setSortConfig({ key, direction: "asc" });
+    }
+  };
+
+  // --- Filter handler ---
+  const handleFilterChange = (key, value) => {
+    setColumnFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // --- Filtered & Sorted Data ---
+  const processedData = useMemo(() => {
     if (!data) return [];
 
-    return data.map((branch, index) => ({
-      id: branch.id,
-      data: [
-        { data: branch.id },
-        { data: branch.branchcode },
-        { data: branch.milestonetitle },
-        { data: branch.task_title },
+    let filtered = data.filter((task) =>
+      columns.every((col) => {
+        if (col.filterable === false || !columnFilters[col.key]) return true;
 
-        { data: branch.duration_days },
+        let value = task[col.key];
 
-        { data: branch.participant_count },
+        // Handle special columns
+        if (col.key === "task_priority") value = task.task_priority;
+        if (col.key === "status") value = task.status;
+        if (col.key === "start_date" || col.key === "end_date")
+          value = new Date(task[col.key]).toLocaleDateString();
 
-        {
-          data: (
-            <div
-              className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${branch.task_priority === "minor" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full mr-2 ${branch.task_priority === "minor" ? "bg-green-800" : "bg-red-700"}`}
-              ></span>
-              {branch.task_priority.charAt(0).toUpperCase() +
-                branch.task_priority.slice(1)}
-            </div>
-          ),
-        },
-        // { data: branch.start_date },
-        // { data: branch.end_date },
-        {
-          data: new Date(branch.start_date).toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }),
-        },
-        {
-          data: new Date(branch.end_date).toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }),
-        },
-        { data: branch.handler_by },
+        if (value === null || value === undefined) value = "";
 
-        {
-          data: (
-            <div
-              className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${branch.status === "completed" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full mr-2 ${branch.status === "completed" ? "bg-green-800" : "bg-red-700"}`}
-              ></span>
-              {branch.status.charAt(0).toUpperCase() + branch.status.slice(1)}
-            </div>
-          ),
-        },
-        {
-          data: (
-            <div className="flex  justify-center gap-2">
-              <Link to={`/task_view/${branch.id}`}>
-                <button
-                  className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
-                  title="View"
-                >
-                  <Eye size={18} />
-                </button>
-              </Link>
-              <button
-                className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
-                onClick={() => handleEditBranch(branch)}
-                title="Edit"
-              >
-                <SquarePen size={18} />
-              </button>
-              <button
-                className="p-1 text-red-600 rounded hover:text-gray-500 dark:hover:text-gray-300"
-                onClick={() => handleDeleteBranch(branch)}
-                title="Delete"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ),
-          className: "action-cell",
-        },
-      ],
+        return value.toString().toLowerCase().includes(columnFilters[col.key].toLowerCase());
+      })
+    );
+
+    if (sortConfig.key) {
+      filtered.sort((a, b) => {
+        let valA = a[sortConfig.key];
+        let valB = b[sortConfig.key];
+
+        if (sortConfig.key === "task_priority") {
+          valA = a.task_priority;
+          valB = b.task_priority;
+        }
+        if (sortConfig.key === "status") {
+          valA = a.status;
+          valB = b.status;
+        }
+
+        if (sortConfig.key === "start_date" || sortConfig.key === "end_date") {
+          valA = new Date(a[sortConfig.key]);
+          valB = new Date(b[sortConfig.key]);
+        }
+
+        if (typeof valA === "number" && typeof valB === "number") {
+          return sortConfig.direction === "asc" ? valA - valB : valB - valA;
+        } else {
+          return sortConfig.direction === "asc"
+            ? valA.toString().localeCompare(valB.toString())
+            : valB.toString().localeCompare(valA.toString());
+        }
+      });
+    }
+
+    return filtered;
+  }, [data, columnFilters, sortConfig]);
+
+  // --- Render Table Head ---
+  const thead = () =>
+    columns.map((col) => ({
+      data: (
+        <div className="flex flex-col">
+          <span
+            className={`cursor-pointer ${col.className || ""}`}
+            onClick={() => col.sortable !== false && handleSort(col.key)}
+          >
+            {col.label}
+            {sortConfig.key === col.key &&
+              (sortConfig.direction === "asc" ? " 🔼" : " 🔽")}
+          </span>
+          {col.filterable !== false && (
+            <input
+              type="text"
+              placeholder={`Search ${col.label}`}
+              value={columnFilters[col.key] || ""}
+              onChange={(e) => handleFilterChange(col.key, e.target.value)}
+              className="w-full text-xs border rounded px-1 py-0.5 mt-1"
+            />
+          )}
+        </div>
+      ),
+      className: col.className,
     }));
+
+  // --- Render Table Body ---
+  const tbody = () => {
+    if (!processedData) return [];
+
+    return processedData.map((task, index) => {
+      const viewUrl = `/task_view/${task.id}`;
+
+      return {
+        data: [
+          { data: task.id },
+          { data: task.branchcode },
+          { data: task.milestonetitle },
+          { data: task.task_title },
+          { data: task.duration_days },
+          { data: task.participant_count },
+          {
+            data: (
+              <div
+                className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+                  task.task_priority === "minor" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full mr-2 ${
+                    task.task_priority === "minor" ? "bg-green-800" : "bg-red-700"
+                  }`}
+                ></span>
+                {task.task_priority.charAt(0).toUpperCase() + task.task_priority.slice(1)}
+              </div>
+            ),
+          },
+          {
+            data: new Date(task.start_date).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }),
+          },
+          {
+            data: new Date(task.end_date).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }),
+          },
+          { data: task.handler_by },
+          {
+            data: (
+              <div
+                className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+                  task.status === "completed" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full mr-2 ${
+                    task.status === "completed" ? "bg-green-800" : "bg-red-700"
+                  }`}
+                ></span>
+                {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+              </div>
+            ),
+          },
+          {
+            data: (
+              <div className="flex justify-center gap-2">
+                <Link to={viewUrl}>
+                  <button className="p-1 text-blue-700" title="View">
+                    <Eye size={18} />
+                  </button>
+                </Link>
+                <button
+                  className="p-1 text-blue-700"
+                  onClick={() => handleEditBranch(task)}
+                  title="Edit"
+                >
+                  <SquarePen size={18} />
+                </button>
+                <button
+                  className="p-1 text-red-600"
+                  onClick={() => handleDeleteBranch(task)}
+                  title="Delete"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            ),
+            className: "action-cell",
+          },
+        ].map((col, idx) => ({
+          ...col,
+          data:
+            idx === 11 ? (
+              col.data
+            ) : (
+              <div
+                onDoubleClick={() => navigate(viewUrl)}
+                className="w-full h-full cursor-pointer"
+              >
+                {col.data}
+              </div>
+            ),
+        })),
+      };
+    });
   };
+
+
+
+
+  // const thead = () => [
+  //   { data: "id" },
+  //   { data: "Branch Code" },
+  //   { data: "Milestone Name" },
+  //   { data: "Task Name" },
+
+  //   { data: "Duration Days" },
+
+  //   { data: "Participant Count" },
+  //   { data: "Task Priority" },
+  //   { data: "Start Date" },
+  //   { data: "End Date" },
+  //   { data: "Handle By" },
+  //   { data: "Status" },
+  //   { data: "Actions", className: "text-center" },
+  // ];
+
+  // const tbody = () => {
+  //   if (!data) return [];
+
+  //   return data.map((branch, index) => ({
+  //     id: branch.id,
+  //     data: [
+  //       { data: branch.id },
+  //       { data: branch.branchcode },
+  //       { data: branch.milestonetitle },
+  //       { data: branch.task_title },
+
+  //       { data: branch.duration_days },
+
+  //       { data: branch.participant_count },
+
+  //       {
+  //         data: (
+  //           <div
+  //             className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${branch.task_priority === "minor" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+  //           >
+  //             <span
+  //               className={`w-2 h-2 rounded-full mr-2 ${branch.task_priority === "minor" ? "bg-green-800" : "bg-red-700"}`}
+  //             ></span>
+  //             {branch.task_priority.charAt(0).toUpperCase() +
+  //               branch.task_priority.slice(1)}
+  //           </div>
+  //         ),
+  //       },
+  //       // { data: branch.start_date },
+  //       // { data: branch.end_date },
+  //       {
+  //         data: new Date(branch.start_date).toLocaleDateString("en-IN", {
+  //           day: "numeric",
+  //           month: "short",
+  //           year: "numeric",
+  //         }),
+  //       },
+  //       {
+  //         data: new Date(branch.end_date).toLocaleDateString("en-IN", {
+  //           day: "numeric",
+  //           month: "short",
+  //           year: "numeric",
+  //         }),
+  //       },
+  //       { data: branch.handler_by },
+
+  //       {
+  //         data: (
+  //           <div
+  //             className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${branch.status === "completed" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+  //           >
+  //             <span
+  //               className={`w-2 h-2 rounded-full mr-2 ${branch.status === "completed" ? "bg-green-800" : "bg-red-700"}`}
+  //             ></span>
+  //             {branch.status.charAt(0).toUpperCase() + branch.status.slice(1)}
+  //           </div>
+  //         ),
+  //       },
+  //       {
+  //         data: (
+  //           <div className="flex  justify-center gap-2">
+  //             <Link to={`/task_view/${branch.id}`}>
+  //               <button
+  //                 className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //                 title="View"
+  //               >
+  //                 <Eye size={18} />
+  //               </button>
+  //             </Link>
+  //             <button
+  //               className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleEditBranch(branch)}
+  //               title="Edit"
+  //             >
+  //               <SquarePen size={18} />
+  //             </button>
+  //             <button
+  //               className="p-1 text-red-600 rounded hover:text-gray-500 dark:hover:text-gray-300"
+  //               onClick={() => handleDeleteBranch(branch)}
+  //               title="Delete"
+  //             >
+  //               <Trash2 size={18} />
+  //             </button>
+  //           </div>
+  //         ),
+  //         className: "action-cell",
+  //       },
+  //     ],
+  //   }));
+  // };
   const calculateCompletionPercentage = () => {
     if (!milestoneData || !milestoneData.totaltask_count) return 0;
 
@@ -694,6 +923,7 @@ const MilestoneTaskList = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Add New Task Form"
+        closeOnOutsideClick={false}
       >
         <AddNewTaskForMilestone
           milestone={milestoneData}
@@ -707,6 +937,7 @@ const MilestoneTaskList = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowEditModal(false)}
         title="Edit Task Form"
+        closeOnOutsideClick={false}
       >
         <EditTaskForm
           taskData={selectedBranch}
@@ -720,6 +951,7 @@ const MilestoneTaskList = () => {
         className="w-full md:w-[600px]"
         onClose={() => setShowDeleteModal(false)}
         title="Drop Milestone"
+        closeOnOutsideClick={false}
       >
         <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
           <div className="space-y-4">
@@ -797,6 +1029,7 @@ const MilestoneTaskList = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowMeetingModal(false)}
         title="Create Meeting"
+        closeOnOutsideClick={false}
       >
         <MilestoneMeetingForm
           milestone={milestoneData}

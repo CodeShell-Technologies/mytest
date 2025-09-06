@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
+// import { Briefcase } from "lucide-react"; // if you use lucide icons
 import axios from "axios";
-import React, { useState } from "react";
+// import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "src/stores/authStore";
 import useBranchStore from "src/stores/useBranchStore";
@@ -21,98 +23,111 @@ import {
   UserCheck,
 } from "lucide-react";
 import { ButtonLoader } from "src/component/Loaders/ButtonLoader";
-const departmentDesignations = {
+import AsyncSelect from "react-select/async";
+// const departmentDesignations = {
   
-admin: [
-    "Admin",
-    "CRM",
-    "Marketing-Executive",
+// admin: [
+//     "Admin",
+//     "CRM",
+//     "Marketing-Executive",
     
-  ],
+//   ],
 
-  architecture: [
-    "principal",
-    "senior-Architect",
-    "architect",
-    "visualizer",
-    "junior-Architect",
-    "architect-Trainee",
-    "architect-Intern",
-  ],
-  visualization: [
-    "principal",
-    "senior-Visualization",
-    "visualization",
-    "junior-Visualization",
-    "visualization-Trainee",
-    "visualization-Intern",
-  ],
-  structural: [
-    "principal",
-    "senior-Structural",
-    "structural-engineer",
-    "junior-Structural",
-    "structural-draftsman",
-    "structural-drafter",
-  ],
-  drafting: [
-    "principal",
-    "senior-Drafting",
-    "drafting",
-    "junior-Drafting",
-    "drafting-Trainee",
-    "drafting-Intern",
-  ],
-  hr: [
-    "principal",
-    "senior-HR-Executive",
-    "hr-Executive",
-    "junior-HR-Executive",
-    "hr-Executive-Trainee",
-    "hr-Executive-Intern",
-  ],
-  sales: [
-    "principal",
-    "senior-Sales-Executive",
-    "sales-Executive",
-    "junior-Sales-Executive",
-    "sales-Executive-Trainee",
-    "sales-Executive-Intern",
-  ],
-  consulting: [
-    "principal",
-    "senior-Site-Engineer",
-    "site-Engineer",
-    "junior-Site-Engineer",
-    "site-Engineer-Trainee",
-    "site-Engineer-Intern",
-  ],
+//   architecture: [
+//     "principal",
+//     "senior-Architect",
+//     "architect",
+//     "visualizer",
+//     "junior-Architect",
+//     "architect-Trainee",
+//     "architect-Intern",
+//   ],
+//   visualization: [
+//     "principal",
+//     "senior-Visualization",
+//     "visualization",
+//     "junior-Visualization",
+//     "visualization-Trainee",
+//     "visualization-Intern",
+//   ],
+//   structural: [
+//     "principal",
+//     "senior-Structural",
+//     "structural-engineer",
+//     "junior-Structural",
+//     "structural-draftsman",
+//     "structural-drafter",
+//   ],
+//   drafting: [
+//     "principal",
+//     "senior-Drafting",
+//     "drafting",
+//     "junior-Drafting",
+//     "drafting-Trainee",
+//     "drafting-Intern",
+//   ],
+//   hr: [
+//     "principal",
+//     "senior-HR-Executive",
+//     "hr-Executive",
+//     "junior-HR-Executive",
+//     "hr-Executive-Trainee",
+//     "hr-Executive-Intern",
+//   ],
+//   sales: [
+//     "principal",
+//     "senior-Sales-Executive",
+//     "sales-Executive",
+//     "junior-Sales-Executive",
+//     "sales-Executive-Trainee",
+//     "sales-Executive-Intern",
+//   ],
+//   consulting: [
+//     "principal",
+//     "senior-Site-Engineer",
+//     "site-Engineer",
+//     "junior-Site-Engineer",
+//     "site-Engineer-Trainee",
+//     "site-Engineer-Intern",
+//   ],
 
-  construction: [
-    "principal",
-    "senior-Site-Engineer",
-    "site-Engineer",
-    "junior-Site-Engineer",
-    "site-Engineer-Trainee",
-    "site-Engineer-Intern",
-  ],
-};
+//   construction: [
+//     "principal",
+//     "senior-Site-Engineer",
+//     "site-Engineer",
+//     "junior-Site-Engineer",
+//     "site-Engineer-Trainee",
+//     "site-Engineer-Intern",
+//   ],
+// };
 
-const departmentOptions = [
-  "architecture",
-  "visualization",
-  "structural",
-  "drafting",
-  "hr",
-  "sales",
-  "consulting",
-  "admin",
-  "construction",
-];
+// const departmentOptions = [
+//   "architecture",
+//   "visualization",
+//   "structural",
+//   "drafting",
+//   "hr",
+//   "sales",
+//   "consulting",
+//   "admin",
+//   "construction",
+// ];
+
+
+
+
 
 function EmployeeForm({ onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false);
-  const [designationOptions, setDesignationOptions] = useState([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  // const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
+  const [departmentOptions, setDepartmentOptions] = useState<Option[]>([]);
+
+  const [departmentDesignations, setDepartmentDesignations] = useState<
+    Record<string, string[]>
+  >({});
+  // const [designationOptions, setDesignationOptions] = useState<string[]>([]);
+  const [designationOptions, setDesignationOptions] = useState<Option[]>([]);
   const [error, setError] = useState("");
   const [roleOptions, setRoleOptions] = useState([]);
   const [formData, setFormData] = useState({
@@ -136,6 +151,7 @@ function EmployeeForm({ onSuccess, onCancel }) {
     pannumber: "",
     aadharnumber: "",
     designation: "",
+    dateofjoining:"",
   });
 
   const token = useAuthStore((state) => state.accessToken);
@@ -154,6 +170,7 @@ function EmployeeForm({ onSuccess, onCancel }) {
     setFormData((prev) => ({
       ...prev,
       [name]: files ? files[0] : value,
+
     }));
 
     // When department changes, update designation options
@@ -213,13 +230,14 @@ function EmployeeForm({ onSuccess, onCancel }) {
         email: formData.email,
         presentaddress: formData.presentAddress,
         permanentaddress: formData.permanentAddress,
-        photograph: formData.photograph,
+        // photograph: formData.photograph,
         role: formData.role,
         password: formData.password,
         department: formData.department,
         pannumber: formData.pannumber,
         aadharnumber: formData.aadharnumber,
         designation: formData.designation,
+        dateofjoining : formData.dateofjoining,
       };
 
       const response = await axios.post(
@@ -251,6 +269,123 @@ function EmployeeForm({ onSuccess, onCancel }) {
       setLoading(false);
     }
   };
+
+
+    useEffect(() => {
+    async function fetchData() {
+      try {
+        const [deptRes, desigRes] = await Promise.all([
+          fetch(`${BASE_URL}/getDepartments`),
+          fetch(`${BASE_URL}/getDesignations`),
+        ]);
+
+        const deptData = await deptRes.json();
+        const desigData = await desigRes.json();
+
+        // set full dept list
+        setDepartments(deptData.data);
+
+        // Department options (names only)
+        // const deptNames = deptData.data.map((d: Department) => d.name).filter(Boolean);
+        const deptNames = deptData.data
+  .map((d: Department) => d.name)
+  .filter(Boolean)
+  .map((name: string) => ({ value: name, label: name })); // ✅ proper shape
+        setDepartmentOptions(deptNames);
+
+        // Build mapping { departmentName: [designation1, designation2] }
+        // const deptDesigs: Record<string, string[]> = {};
+        // desigData.data.forEach((item: Designation) => {
+        //   const dept = item.department;
+        //   if (!deptDesigs[dept]) {
+        //     deptDesigs[dept] = [];
+        //   }
+        //   deptDesigs[dept].push(item.designation);
+        // });
+        // setDepartmentDesignations(deptDesigs);
+
+
+        const deptDesigs: Record<string, Option[]> = {};
+
+desigData.data.forEach((item: Designation) => {
+  const dept = item.department;
+  if (!deptDesigs[dept]) {
+    deptDesigs[dept] = [];
+  }
+  deptDesigs[dept].push({
+    value: item.designation,
+    label: item.designation,
+  });
+});
+
+setDepartmentDesignations(deptDesigs);
+      } catch (err) {
+        console.error("Error fetching data", err);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  // ✅ Update designation options when department changes
+  useEffect(() => {
+    if (formData.department) {
+      setDesignationOptions(departmentDesignations[formData.department] || []);
+    } else {
+      setDesignationOptions([]);
+    }
+  }, [formData.department, departmentDesignations]);
+
+
+
+    const loadBranches = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = branchCodeOption.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+  //  const loadDeps = (inputValue: string, callback: (options: Option[]) => void) => {
+  //   const filtered = departmentOptions.filter((c) =>
+  //     c.label.toLowerCase().includes(inputValue.toLowerCase())
+  //   );
+  //   callback(filtered);
+  // };
+
+    const loadDeps = (inputValue: string, callback: (options: Option[]) => void) => {
+  const filtered = departmentOptions.filter((c) =>
+    c.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
+  callback(filtered);
+};
+
+
+
+  //    const loadDesg = (inputValue: string, callback: (options: Option[]) => void) => {
+  //   const filtered = designationOptions.filter((c) =>
+  //     c.label.toLowerCase().includes(inputValue.toLowerCase())
+  //   );
+  //   callback(filtered);
+  // };
+
+
+const loadDesg = (inputValue: string, callback: (options: Option[]) => void) => {
+  const filtered = designationOptions.filter((c) =>
+    c.label.toLowerCase().includes(inputValue.toLowerCase())
+  );
+  callback(filtered);
+};
+
+
+       const loadRole = (inputValue: string, callback: (options: Option[]) => void) => {
+    const filtered = roleOptions.filter((c) =>
+      c.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
+    callback(filtered);
+  };
+
+
+
 
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
@@ -431,8 +566,21 @@ function EmployeeForm({ onSuccess, onCancel }) {
             />
           </div>
         </div>
+                 
+        <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <Calendar className="inline mr-1" size={14} /> Date of Joining<span className="text-red-700 text-lg m-2">*</span>
+            </p>
+            <input
+              type="date"
+              name="dateofjoining"
+              value={formData.dateofjoining}
+              onChange={handleChange}
+              className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+              required
+            />
       </div>
-
+</div>
       {/* Address Information Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold border-b pb-2 text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700">
@@ -498,7 +646,7 @@ function EmployeeForm({ onSuccess, onCancel }) {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Hash className="inline mr-1" size={14} /> Branch Code <span className="text-red-700 text-lg m-2">*</span>
             </p>
-            <select
+            {/*<select
               name="branchcode"
               value={formData.branchcode}
               onChange={handleBranchChange} // Use the special handler for branch
@@ -512,13 +660,40 @@ function EmployeeForm({ onSuccess, onCancel }) {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+
+
+        <AsyncSelect
+  cacheOptions
+  defaultOptions={branchCodeOption}
+  name="branchcode"
+  loadOptions={loadBranches}
+  onChange={(selected: Option | null) => {
+    const fakeEvent = {
+      target: { value: selected ? selected.value : "" },
+    };
+    handleBranchChange(fakeEvent);
+
+    setFormData((prev) => ({
+      ...prev,
+      branchcode: selected ? selected.value : "",
+      // staff_id: "", // reset staff_id if needed
+    }));
+  }}
+  value={
+    branchCodeOption.find((opt) => opt.value === formData.branchcode) || null
+  }
+  placeholder="Select or search branch"
+/>
+
+
           </div>
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <UserCheck className="inline mr-1" size={14} /> User Role <span className="text-red-700 text-lg m-2">*</span>
             </p>
-            <select
+            {/*<select
               name="role"
               value={formData.role}
               onChange={handleChange}
@@ -532,9 +707,55 @@ function EmployeeForm({ onSuccess, onCancel }) {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+
+   {/*         <AsyncSelect
+  cacheOptions
+  defaultOptions={roleOptions} // initial options
+  name="role"
+  loadOptions={loadRole} // async filter function
+  onChange={(selected: Option | null) => {
+    const fakeEvents = {
+      target: { value: selected ? selected.value : "" },
+    };
+    handleChange(fakeEvents);
+     setFormData((prev) => ({
+      ...prev,
+      role: selected ? selected.value : "",
+      // staff_id: "", // ✅ reset staff_id when department changes
+    }));
+  }}
+  value={roleOptions.find((opt) => opt.value === formData.role) || null}
+  placeholder="Select or search Role"
+/>*/}
+
+    <AsyncSelect
+    cacheOptions
+    defaultOptions={roleOptions}
+    name="role"
+    loadOptions={loadRole}
+    onChange={(selected: Option | null) => {
+      const fakeEvent = {
+        target: { value: selected ? selected.value : "" },
+      };
+      handleChange(fakeEvent);
+
+      setFormData((prev) => ({
+        ...prev,
+        role: selected ? selected.value : "",
+      }));
+    }}
+    value={roleOptions.find((opt) => opt.value === formData.role) || null}
+    placeholder="Select or search Role"
+  />
+
+
+
+
+
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+        {/*  <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Briefcase className="inline mr-1" size={14} /> Department<span className="text-red-700 text-lg m-2">*</span>
             </p>
@@ -574,12 +795,107 @@ function EmployeeForm({ onSuccess, onCancel }) {
               ))}
             </select>
           </div>
+*/}
+
+
+          {/* Department */}
+      <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <Briefcase className="inline mr-1" size={14} /> Department
+          <span className="text-red-700 text-lg m-2">*</span>
+        </p>
+        {/*<select
+          name="department"
+          value={formData.department}
+          onChange={handleChange}
+          className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+          required
+        >
+          <option value="">Select Department</option>
+          {departmentOptions.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
+          ))}
+        </select>*/}
+
+
+           <AsyncSelect
+  cacheOptions
+  defaultOptions={departmentOptions} // must be [{ value, label }]
+  name="department"
+  loadOptions={loadDeps}
+  onChange={(selected: Option | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      department: selected ? selected.value : "",
+    }));
+  }}
+  value={
+    departmentOptions.find((opt) => opt.value === formData.department) || null
+  }
+  placeholder="Select or search department"
+/>
+
+
+
+
+          </div>
+
+
+
+
+      
+
+      {/* Designation */}
+      <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          <Briefcase className="inline mr-1" size={14} /> Designation
+          <span className="text-red-700 text-lg m-2">*</span>
+        </p>
+        {/*<select
+          name="designation"
+          value={formData.designation}
+          onChange={handleChange}
+          className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+          required
+          disabled={!formData.department}
+        >
+          <option value="">Select Designation</option>
+          {designationOptions.map((designation) => (
+            <option key={designation} value={designation}>
+              {designation}
+            </option>
+          ))}
+        </select>*/}
+
+         <AsyncSelect
+  cacheOptions
+  defaultOptions={designationOptions}
+  name="designation"
+  loadOptions={loadDesg}
+  onChange={(selected: Option | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      designation: selected ? selected.value : "",
+    }));
+  }}
+  value={
+    designationOptions.find((opt) => opt.value === formData.designation) || null
+  }
+  placeholder="Select or search Designation"
+/>
+
+
+
+
+      </div>
 
       
         </div>
       </div>
 
-      {/* Identification Information Section */}
+
       <div className="space-y-4">
         <h3 className="text-lg font-semibold border-b pb-2 text-gray-800 dark:text-gray-100 border-gray-200 dark:border-gray-700">
           <CreditCard className="inline mr-2" /> Identification Information

@@ -158,41 +158,85 @@ const FeedbackForm = ({ employee, onSuccess, onCancel }) => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
 
-    const feedbackData = {
-      reviewData: {
-        ...formData,
-        review_year: formData.review_year
-          ? `${formData.review_year}-01-01|${formData.review_year}-12-31`
-          : "",
-      },
+  //   const feedbackData = {
+  //     reviewData: {
+  //       ...formData,
+  //       review_year: formData.review_year
+  //         ? `${formData.review_year}-01-01|${formData.review_year}-12-31`
+  //         : "",
+  //     },
+  //   };
+
+  //   try {
+  //     const response = await axios.post(
+  //       `${BASE_URL}/users/self_rating/create`,
+  //       feedbackData,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       }
+  //     );
+
+  //     if (response.status === 201) {
+  //       toast.success("Feedback submitted successfully!");
+  //       onSuccess();
+  //     } else {
+  //       setError(response.data.message || "Failed to submit feedback");
+  //     }
+  //   } catch (err) {
+  //     setError(err.response?.data?.message || "An error occurred");
+  //     toast.error(error || "Error submitting feedback");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+
+  try {
+    // const payload = {
+    //   reviewData: {
+    //     ...formData,
+    //     review_year: formData.review_year
+    //       ? `${formData.review_year}-01-01|${formData.review_year}-12-31`
+    //       : "",
+    //   },
+    // };
+
+
+    const payload = {
+      ...formData,
+      review_year: formData.review_year
+        ? `${formData.review_year}-01-01|${formData.review_year}-12-31`
+        : "",
     };
 
-    try {
-      const response = await axios.post(
-        `${BASE_URL}/users/self_rating/create`,
-        feedbackData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
 
-      if (response.status === 201) {
-        toast.success("Feedback submitted successfully!");
-        onSuccess();
-      } else {
-        setError(response.data.message || "Failed to submit feedback");
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "An error occurred");
-      toast.error(error || "Error submitting feedback");
-    } finally {
-      setLoading(false);
+    const response = await axios.post(
+      `${BASE_URL}/addfeedbackemp`,
+      payload,
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    if (response.data?.success) {
+      toast.success("Review submitted successfully!");
+      onSuccess?.(); // optional callback if parent needs refresh
+    } else {
+      toast.error(response.data?.message || "Something went wrong!");
     }
-  };
+  } catch (error: any) {
+    console.error("Submit Error:", error);
+    toast.error(error.response?.data?.message || "Server error. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Rating scale component
   const RatingScale = ({ name, value, label }) => (
@@ -942,23 +986,32 @@ const FeedbackForm = ({ employee, onSuccess, onCancel }) => {
 
       {/* Form Actions */}
       <div className="flex justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <button
-          type="button"
-          className="px-5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md transition-colors duration-200 font-medium text-sm"
-          onClick={onCancel}
-          disabled={loading}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          onClick={handleSubmit}
-          className="px-5 py-2 bg-red-700 hover:bg-red-800 dark:bg-red-800 dark:hover:bg-red-900 text-white rounded-md transition-colors duration-200 font-medium text-sm shadow-sm"
-          disabled={loading}
-        >
-          {loading ? <ButtonLoader /> : "Submit Feedback"}
-        </button>
-      </div>
+  {/* Cancel Button */}
+  <button
+    type="button"
+    onClick={onCancel}
+    disabled={loading}
+    className="px-5 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 
+               text-gray-800 dark:text-gray-200 rounded-md transition-colors duration-200 
+               font-medium text-sm"
+  >
+    Cancel
+  </button>
+
+  {/* Submit Button */}
+  <button
+    type="submit"
+
+    onClick={handleSubmit}
+    
+    className="px-5 py-2 bg-red-700 hover:bg-red-800 dark:bg-red-800 dark:hover:bg-red-700 
+               text-white rounded-md transition-colors duration-200 font-medium text-sm 
+               flex items-center justify-center"
+  >
+    
+      Submit
+  </button>
+</div>
     </div>
   );
 };
