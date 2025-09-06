@@ -280,12 +280,15 @@ import {
   Calculator,
   FileClock,
   MessageCircleWarning,
+  Home ,
 } from "lucide-react";
 
 export const Sidebar = forwardRef<HTMLDivElement>((props, ref) => {
   const { isOpen } = useSideBar();
   const [allowedLinks, setAllowedLinks] = useState<typeof navbarLinks>([]);
   const [hydrated, setHydrated] = useState(false);
+
+
 
   const UserRole = useAuthStore((state) => state.role);
   const token = useAuthStore((state) => state.accessToken);
@@ -352,7 +355,7 @@ const dashlinks = [{
       links: [
       {
         label: "Dashboard",
-  
+  icon: Home ,
         path: "/",
       },
     ],
