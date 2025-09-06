@@ -281,6 +281,7 @@ import {
   FileClock,
   MessageCircleWarning,
   Home ,
+  Split,
 } from "lucide-react";
 
 export const Sidebar = forwardRef<HTMLDivElement>((props, ref) => {
@@ -349,6 +350,17 @@ export const Sidebar = forwardRef<HTMLDivElement>((props, ref) => {
 
   
 
+const branchlinks = [{
+        title: "Branch Management",
+    links: [
+      {
+        label: "Branches",
+        icon: Split,
+        path: "/branch",
+      },
+    ],
+    }];
+
 
 const dashlinks = [{
       title: "Dashboard",
@@ -409,7 +421,7 @@ const dashlinks = [{
 
   const finalLinks =
     UserRole === "superadmin" || UserRole === "admin" || UserRole === "hr"
-      ? [...dashlinks, ...allowedLinks, ...extraLinks]
+      ? [...dashlinks,...branchlinks , ...allowedLinks, ...extraLinks]
       : [...dashlinks, ...allowedLinks,...addlinks];
 
   return (
