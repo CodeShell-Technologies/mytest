@@ -344,6 +344,20 @@ export const Sidebar = forwardRef<HTMLDivElement>((props, ref) => {
     return <div></div>;
   }
 
+  
+
+
+const dashlinks = [{
+      title: "Dashboard",
+      links: [
+      {
+        label: "Dashboard",
+        icon: House,
+        path: "/",
+      },
+    ],
+    }];
+
   const addlinks = [{
       title: "Attandance",
       links: [{ label: "Attandance", icon: CalendarCheck, path: "/attandance" },
@@ -391,9 +405,9 @@ export const Sidebar = forwardRef<HTMLDivElement>((props, ref) => {
   ];
 
   const finalLinks =
-    UserRole === "superadmin" || UserRole === "admin"
-      ? [...allowedLinks, ...extraLinks]
-      : [...allowedLinks,...addlinks];
+    UserRole === "superadmin" || UserRole === "admin" || UserRole === "hr"
+      ? [...dashlinks, ...allowedLinks, ...extraLinks]
+      : [...dashlinks, ...allowedLinks,...addlinks];
 
   return (
     <aside
