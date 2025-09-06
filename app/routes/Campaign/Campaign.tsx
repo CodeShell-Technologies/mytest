@@ -151,6 +151,39 @@ const Campaign = () => {
     setDeleteData(branch);
   };
 
+const [file, setFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+
+  // Upload Excel handler
+const handleUpload = async () => {
+    if (!file) return alert("Please select a file first");
+
+    const formData = new FormData();
+    formData.append("file", file); // 👈 Must match multer.single("file")
+
+    try {
+      const res = await axios.post("http://localhost:5000/api/campaignimport", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("token")}`, // if using auth
+        },
+      });
+      console.log("Upload success:", res.data);
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
+  };
+
+
+
+
+
   const handleDeleteSubmit = async () => {
     const deleteDatas = {
       data: {
@@ -317,6 +350,9 @@ const Campaign = () => {
                 {showFilters ? "Hide Filters" : "Show Filters"}
               </button>
             )}
+
+
+
           </div>
           <Toaster position={toastposition} reverseOrder={false} />
 
@@ -331,6 +367,25 @@ const Campaign = () => {
                 placeholder="Items per page"
                 className="w-full md:w-[150px]"
               />
+              <label className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5 cursor-pointer">
+  <input
+    type="file"
+    accept=".xlsx, .xls"
+    onChange={handleFileChange}   // ✅ use handleFileChange
+    className="hidden"
+  />
+  <CgExport className="mr-1" />
+  {!isMobile && "Upload Excel"}
+</label>
+
+<button
+  onClick={handleUpload}  // ✅ trigger upload separately
+  className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+>
+  Upload
+</button>
+
+
               <button
                 onClick={handleOnExport}
                 className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
@@ -429,6 +484,8 @@ const Campaign = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Create New Campaign"
+          closeOnOutsideClick={false}
+
       >
         <AddNewCampaignForm
           onSuccess={handleCreateSuccess}
@@ -441,6 +498,8 @@ const Campaign = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowEditModal(false)}
         title="Edit Campaign"
+          closeOnOutsideClick={false}
+
       >
         <EditCampaignForm
           campaign={selectedBranch}
@@ -454,6 +513,8 @@ const Campaign = () => {
         className="w-full md:w-[600px]"
         onClose={() => setShowDeleteModal(false)}
         title="Delete Campaign"
+          closeOnOutsideClick={false}
+
       >
         <Modal
           isVisible={showDeleteModal}

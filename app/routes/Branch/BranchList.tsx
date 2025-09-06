@@ -384,10 +384,13 @@ const BranchList = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Create New Branch"
+          closeOnOutsideClick={false}
+
       >
         <CreateBranchForm
           onSuccess={handleCreateSuccess}
           onCancel={() => setShowCreateModal(false)}
+
         />
       </Modal>
 
@@ -396,6 +399,8 @@ const BranchList = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowEditModal(false)}
         title="Edit Branch"
+          closeOnOutsideClick={false}
+
       >
         <EditBranchForm
           branch={selectedBranch}
@@ -408,6 +413,8 @@ const BranchList = () => {
         className="w-full md:w-[800px]"
         onClose={() => setShowMeetingModal(false)}
         title="Create Branch Meeting"
+          closeOnOutsideClick={false}
+
       >
         <BranchMeetingForm
           branch={selectedBranch}
@@ -420,6 +427,8 @@ const BranchList = () => {
         className="w-full md:w-[600px]"
         onClose={() => setShowDeleteModal(false)}
         title="Delete Branch"
+          closeOnOutsideClick={false}
+
       >
     
         <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">

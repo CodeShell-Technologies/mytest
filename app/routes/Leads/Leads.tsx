@@ -454,6 +454,8 @@ const handleConvertSuccess=()=>{
         className="w-full md:w-[800px]"
         onClose={() => setShowCreateModal(false)}
         title="Create New Lead"
+          closeOnOutsideClick={false}
+
       >
         <AddNewLeadForm
           onSuccess={handleCreateSuccess}
@@ -465,6 +467,8 @@ const handleConvertSuccess=()=>{
         className="w-full md:w-[800px]"
         onClose={() => setShowEditModal(false)}
         title="Edit Branch"
+          closeOnOutsideClick={false}
+
       >
         <EditLeadForm
           lead={selectedBranch}
@@ -477,6 +481,8 @@ const handleConvertSuccess=()=>{
         className="w-full md:w-[800px]"
         onClose={() => setShowConvertClientModal(false)}
         title="Client Convert Form "
+          closeOnOutsideClick={false}
+
       >
         <LeadClientForm
           lead={selectedBranch}
@@ -490,6 +496,8 @@ const handleConvertSuccess=()=>{
         className="w-full md:w-[600px]"
         onClose={() => setShowDeleteModal(false)}
         title="Delete Branch"
+          closeOnOutsideClick={false}
+
       >
         <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
           <div className="text-center">
