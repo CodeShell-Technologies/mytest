@@ -352,7 +352,7 @@ const dashlinks = [{
       links: [
       {
         label: "Dashboard",
-        icon: House,
+  
         path: "/",
       },
     ],
