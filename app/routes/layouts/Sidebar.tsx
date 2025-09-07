@@ -421,8 +421,8 @@ const dashlinks = [{
 
   const finalLinks =
     UserRole === "superadmin" || UserRole === "admin" || UserRole === "hr"
-      ? [...dashlinks,...branchlinks , ...allowedLinks, ...extraLinks]
-      : [...dashlinks, ...allowedLinks,...addlinks];
+      ? [...allowedLinks, ...extraLinks]
+      : [...allowedLinks,...addlinks];
 
   return (
     <aside
