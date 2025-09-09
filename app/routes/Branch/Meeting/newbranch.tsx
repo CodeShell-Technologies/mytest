@@ -1493,68 +1493,139 @@ const filteredStaffOptions = staffOptions.filter((person) =>
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
 
-    try {
-      // Prepare the meeting data in the required format
-      const meetingData = {
-        branchcode: formData.branchcode,
-        title: formData.title,
-        notes: formData.notes,
-        comm_type: formData.comm_type,
-        status: formData.status,
-        meet_link: formData.meet_link,
-        start_date_time: formData.start_date_time,
-        end_date_time: formData.end_date_time,
-        doc_status: formData.doc_status,
-        category: formData.category,
-        field: formData.field,
-        custom: customTargets,
-        communication_participants: participants,
+  //   try {
+  //     // Prepare the meeting data in the required format
+  //     const meetingData = {
+  //       branchcode: formData.branchcode,
+  //       title: formData.title,
+  //       notes: formData.notes,
+  //       comm_type: formData.comm_type,
+  //       status: formData.status,
+  //       meet_link: formData.meet_link,
+  //       start_date_time: formData.start_date_time,
+  //       end_date_time: formData.end_date_time,
+  //       doc_status: formData.doc_status,
+  //       category: formData.category,
+  //       field: formData.field,
+  //       custom: customTargets,
+  //       communication_participants: participants,
         
-      };
+  //     };
 
-      // Create FormData for the request
-      const formDataToSend = new FormData();
+  //     // Create FormData for the request
+  //     const formDataToSend = new FormData();
 
-      // Append the meeting data as JSON string
-      formDataToSend.append("data", JSON.stringify([meetingData]));
+  //     // Append the meeting data as JSON string
+  //     formDataToSend.append("data", JSON.stringify([meetingData]));
 
-      // Append each file directly
-      formData.doc.forEach((fileObj) => {
-        formDataToSend.append("URL", fileObj.file);
-      });
-      console.log("formataaaanew form", formDataToSend);
-      const response = await axios.post(
-        `${BASE_URL}/doc_meet/create`,
-        formDataToSend,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+  //     // Append each file directly
+  //     formData.doc.forEach((fileObj) => {
+  //       formDataToSend.append("URL", fileObj.file);
+  //     });
+  //     console.log("formataaaanew form", formDataToSend);
+  //     const response = await axios.post(
+  //       `${BASE_URL}/doc_meet/create`,
+  //       formDataToSend,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //           "Content-Type": "multipart/form-data",
+  //         },
+  //       }
+  //     );
 
-      if (response.status === 201) {
-        toast.success(
-          `${formData.comm_type === "meeting" ? "Meeting" : "Document"} created successfully!`
-        );
-        onSuccess();
-      } else {
-        setError(response.data.message || "Failed to create communication");
+  //     if (response.status === 201) {
+  //       toast.success(
+  //         `${formData.comm_type === "meeting" ? "Meeting" : "Document"} created successfully!`
+  //       );
+  //       onSuccess();
+  //     } else {
+  //       setError(response.data.message || "Failed to create communication");
+  //     }
+  //   } catch (err) {
+  //     setError(err.response?.data?.message || "An error occurred");
+  //     toast.error(
+  //       `Error creating ${formData.comm_type === "meeting" ? "meeting" : "document"}`
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+
+ if (formData.comm_type === "meeting" && formData.doc.length === 0) {
+    toast.error("Please upload at least one document for a meeting.");
+    return;
+  }
+
+  try {
+    const meetingData = {
+      branchcode: formData.branchcode,
+      title: formData.title,
+      notes: formData.notes,
+      comm_type: formData.comm_type,
+      status: formData.status,
+      meet_link: formData.meet_link,
+      start_date_time: formData.start_date_time,
+      end_date_time: formData.end_date_time,
+      doc_status: formData.doc_status,
+      category: formData.category,
+      field: formData.field,
+      custom: customTargets,
+      communication_participants: participants,
+    };
+
+    const formDataToSend = new FormData();
+
+    // Append meeting data
+    formDataToSend.append("data", JSON.stringify([meetingData]));
+
+    // Append files (field name must match backend: "files")
+  formData.doc.forEach((fileObj) => {
+  formDataToSend.append("files", fileObj.file);
+});
+
+    console.log("formDataToSend", formDataToSend);
+
+    const response = await axios.post(
+      `${BASE_URL}/doc_meet/create`,
+      formDataToSend,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // REMOVE this → let axios set Content-Type automatically
+          // "Content-Type": "multipart/form-data",
+        },
       }
-    } catch (err) {
-      setError(err.response?.data?.message || "An error occurred");
-      toast.error(
-        `Error creating ${formData.comm_type === "meeting" ? "meeting" : "document"}`
+    );
+
+    if (response.status === 201) {
+      toast.success(
+        `${formData.comm_type === "meeting" ? "Meeting" : "Document"} created successfully!`
       );
-    } finally {
-      setLoading(false);
+      onSuccess();
+    } else {
+      setError(response.data.message || "Failed to create communication");
     }
-  };
+  } catch (err) {
+    setError(err.response?.data?.message || "An error occurred");
+    toast.error(
+      `Error creating ${formData.comm_type === "meeting" ? "meeting" : "document"}`
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
 
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
@@ -1780,7 +1851,7 @@ const filteredStaffOptions = staffOptions.filter((person) =>
 
         {/* File Upload (shown only for documents) */}
         
-          <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+{/*          <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
               <FileUp className="inline mr-1" size={14} /> Documents
             </p>
@@ -1810,8 +1881,51 @@ const filteredStaffOptions = staffOptions.filter((person) =>
                 ))}
               </div>
             )}
-          </div>
+          </div>*/}
         
+
+        {/* File Upload Section */}
+{(formData.comm_type === "doc" || formData.comm_type === "meeting") && (
+  <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+      <FileUp className="inline mr-1" size={14} /> Documents
+      {formData.comm_type === "meeting" && (
+        <span className="text-red-700 text-lg m-2">*</span>
+      )}
+    </p>
+
+    <input
+      type="file"
+      id="file-upload"
+      multiple
+      onChange={handleFileUpload}
+      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[var(--color-primary)] file:text-white hover:file:bg-[var(--color-hover)]"
+      required={formData.comm_type === "meeting"} // ✅ Required if meeting
+    />
+
+    {/* Show selected files */}
+    {formData.doc.length > 0 && (
+      <div className="mt-4 space-y-2">
+        {formData.doc.map((file, index) => (
+          <div
+            key={index}
+            className="flex justify-between items-center p-2 bg-gray-100 dark:bg-gray-700 rounded"
+          >
+            <span className="text-sm">{file.name}</span>
+            <button
+              type="button"
+              onClick={() => removeFile(index)}
+              className="text-red-500 hover:text-red-700"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
 
         {/* Custom Filters Section (shown only when category is custom) */}
         {formData.category === "custom" && (
@@ -2111,7 +2225,7 @@ const filteredStaffOptions = staffOptions.filter((person) =>
 
 
 
-            {showParticipants && (
+          	{showParticipants && (
   <div className="mt-4 space-y-4">
     <div>
       <p className="text-xs text-gray-500 mb-2">

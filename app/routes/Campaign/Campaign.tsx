@@ -21,7 +21,7 @@ import { Edit2, Eye, SquarePen, Trash2 } from "lucide-react";
 import { useMediaQuery } from "../hooks/use-click-outside";
 import AddNewCampaignForm from "./AddNewCampaignForm";
 import EditCampaignForm from "./EditCampaignForm";
-
+import { useNavigate } from "react-router-dom";
 const Campaign = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,7 +44,15 @@ const Campaign = () => {
   const [pageSize, setPageSize] = useState(8);
   const [showFilters, setShowFilters] = useState(false);
   const token = useAuthStore((state) => state.accessToken);
+  const userRole = useAuthStore((state) => state.role);
   const [formData, setFormData] = useState({ status: "active" });
+   // const [file, setFile] = useState<File | null>(null);
+  const navigate = useNavigate();
+
+
+     const [hydrated, setHydrated] = useState(false);
+
+
 
   const {
     branches,
@@ -69,9 +77,32 @@ const Campaign = () => {
     { value: 200, label: "100 per page" },
   ];
 
+
+      // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+  // useEffect(() => {
+  //   fetchBranches(token);
+  // }, [token]);
+
+
+useEffect(() => {
+  if (hydrated && token) {
     fetchBranches(token);
-  }, [token]);
+    getCampaign();
+  }
+}, [hydrated, token]);
+
 
   const getCampaign = async (
     page = currentPage,
@@ -107,17 +138,34 @@ const Campaign = () => {
     }
   };
 
+  // useEffect(() => {
+  //   getCampaign();
+  // }, [
+  //   currentPage,
+  //   searchTerm,
+  //   selectStatus,
+  //   selectedManager,
+  //   selectedBranchCode,
+  //   sortOrder,
+  //   pageSize,
+  // ]);
+
   useEffect(() => {
+  if (hydrated && token) {
     getCampaign();
-  }, [
-    currentPage,
-    searchTerm,
-    selectStatus,
-    selectedManager,
-    selectedBranchCode,
-    sortOrder,
-    pageSize,
-  ]);
+  }
+}, [
+  hydrated,
+  token,
+  currentPage,
+  searchTerm,
+  selectStatus,
+  selectedManager,
+  selectedBranchCode,
+  sortOrder,
+  pageSize,
+]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -168,13 +216,15 @@ const handleUpload = async () => {
     formData.append("file", file); // 👈 Must match multer.single("file")
 
     try {
-      const res = await axios.post("http://localhost:5000/api/campaignimport", formData, {
+      const res = await axios.post(`${BASE_URL}/campaignimport`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // if using auth
+          Authorization: `Bearer ${token}`, // if using auth
         },
       });
       console.log("Upload success:", res.data);
+      alert ("campaigns imported successfully!")
+      navigate("/campaign");
     } catch (err) {
       console.error("Upload failed:", err);
     }
@@ -334,6 +384,17 @@ const handleUpload = async () => {
     XLSX.writeFile(wb, "CampaignList.xlsx");
   };
 
+
+
+  if (!hydrated) {
+    return <div>Loading...</div>; // wait until state is restored
+  }
+
+  console.log("AccessToken:", token);
+  console.log("Role:", userRole);
+
+
+
   return (
     <>
       <div className="flex flex-col min-h-screen">
@@ -367,32 +428,56 @@ const handleUpload = async () => {
                 placeholder="Items per page"
                 className="w-full md:w-[150px]"
               />
-              <label className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5 cursor-pointer">
-  <input
-    type="file"
-    accept=".xlsx, .xls"
-    onChange={handleFileChange}   // ✅ use handleFileChange
-    className="hidden"
-  />
-  <CgExport className="mr-1" />
-  {!isMobile && "Upload Excel"}
-</label>
+      <a
+    href="/sample_campaigns.xlsx"  // put file inside /public folder
+    download
+    className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-purple-700/70 px-3 py-2.5"
+  >
+    Download Template
+  </a>
+          <div className="flex items-center gap-2">
+  {/* Upload Excel button + filename */}
+  <div className="flex flex-col items-start">  {/* 👈 changed to items-start */}
+    <label className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5 cursor-pointer">
+      <input
+        type="file"
+        accept=".xlsx, .xls"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      <CgExport className="mr-1" />
+      Upload Excel
+    </label>
 
-<button
-  onClick={handleUpload}  // ✅ trigger upload separately
-  className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
->
-  Upload
-</button>
+
+  </div>
+
+    {/* ✅ left-aligned filename */}
+    {file && (
+      <span
+        className="text-xs text-green-500 mt-1 max-w-[140px] truncate"
+        title={file.name}
+      >
+        {file.name}
+      </span>
+    )}
+  {/* Upload button */}
 
 
-              <button
-                onClick={handleOnExport}
-                className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
-              >
-                <FileDown className="mr-1" />
-                {!isMobile && "Export Excel"}
-              </button>
+  <button
+    onClick={handleUpload}
+    className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5"
+  >
+    Upload
+  </button>
+
+  {/* Export Excel button */}
+
+  <button className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-blue-700/70 px-3 py-2.5">
+    Export Excel
+  </button>
+</div>
+
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
