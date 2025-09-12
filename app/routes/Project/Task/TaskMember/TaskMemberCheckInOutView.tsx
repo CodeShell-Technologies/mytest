@@ -227,13 +227,13 @@ const TaskMemberViewPage = () => {
             <span className="font-medium text-gray-700 dark:text-gray-100">
               Project:
             </span>{" "}
-            {memberData.projecttitle}
+            {memberData.project_title}
           </div>
           <div>
             <span className="font-medium text-gray-700 dark:text-gray-100">
               Milestone:
             </span>{" "}
-            {memberData.milestonetitle}
+            {memberData.milestone_title}
           </div>
           <div>
             <span className="font-medium text-gray-700 dark:text-gray-100">

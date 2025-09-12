@@ -11,6 +11,7 @@ import {
   X,
   Clock,
   Users,
+  FileText,
   BookUser,
 } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -22,6 +23,10 @@ import useBranchStore from "src/stores/useBranchStore";
 import { useMediaQuery } from "~/routes/hooks/use-click-outside";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+// import { FileDown,  } from "lucide-react";
+
 
 const AttendanceSheetReport = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
@@ -191,8 +196,8 @@ const AttendanceSheetReport = () => {
       let url = `${BASE_URL}/users/attendance/read?page=${currentPage}&limit=${pageSize}`;
 
       if (staffIdToUse) url += `&staff_id=${encodeURIComponent(staffIdToUse)}`;
-      if (selectedBranchCode)
-        url += `&branchcode=${encodeURIComponent(selectedBranchCode)}`;
+      // if (selectedBranchCode)
+      //   url += `&branchcode=${encodeURIComponent(selectedBranchCode)}`;
       if (selectedTeamId)
         url += `&team_id=${encodeURIComponent(selectedTeamId)}`;
       if (startDate) url += `&start_date=${formatDate(startDate)}`;
@@ -314,6 +319,45 @@ const AttendanceSheetReport = () => {
   const generateReport = () => {
     fetchAttendanceData();
   };
+
+
+
+
+const handleExportPDF = () => {
+  if (!attendanceData?.data?.length) return toast.error("No data to export");
+
+  const doc = new jsPDF();
+  doc.setFontSize(18);
+  doc.text("Attendance Report", 14, 22);
+
+  const tableColumn = ["Staff ID", "Staff Name", "Date", "Status", "Total Hours"];
+  const tableRows: any[] = [];
+
+  attendanceData.data.forEach((record: any) => {
+    tableRows.push([
+      record.staff_id,
+      record.staff_name,
+      new Date(record.attendance_date).toLocaleDateString(),
+      record.status,
+      record.total_worked_hours,
+    ]);
+  });
+
+  // ✅ Use autoTable
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 30,
+    theme: "striped",
+    headStyles: { fillColor: [41, 128, 185] },
+    styles: { fontSize: 10 },
+  });
+
+  doc.save("AttendanceReport.pdf");
+};
+
+
+
 
   const getStatusBadge = (status) => {
     let bgColor = "";
@@ -502,6 +546,14 @@ const AttendanceSheetReport = () => {
                   <FileDown className="mr-1" />
                   {!isMobile && "Export Excel"}
                 </button>
+
+                <button
+          onClick={handleExportPDF}
+          disabled={!attendanceData?.data?.length}
+          className="px-4 py-2 border rounded flex items-center gap-1"
+        >
+          <FileText /> Export PDF
+        </button>
               </div>
 
               <button

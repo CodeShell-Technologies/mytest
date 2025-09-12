@@ -61,7 +61,10 @@ const ProjectTaskList = () => {
   const token = useAuthStore((state) => state.accessToken);
   const staff_id = useAuthStore((state) => state.staff_id);
   const navigate = useNavigate();
+   const permissions = useAuthStore((state) => state.permissions);
+  const userRole = permissions[0].role;
 
+const [roleAccess, setRoleAccess] = useState(null); // ✅ define here
   // --- Sorting & Filtering State ---
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [columnFilters, setColumnFilters] = useState({});
@@ -127,6 +130,22 @@ const ProjectTaskList = () => {
   //     setLoading(false);
   //   }
   // };
+
+
+
+    useEffect(() => {
+  fetch(`${BASE_URL}/get-roleaccessdetail/${userRole}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.status) {
+        setRoleAccess(data.access);
+      }
+    });
+}, [userRole]);
+
+console.log("RoleAccess:", roleAccess);
+
+
   const getBranch = async (
     page = currentPage,
     limit = pageSize,
@@ -461,6 +480,7 @@ const ProjectTaskList = () => {
                     <Eye size={18} />
                   </button>
                 </Link>
+                                         {roleAccess?.task?.edit && (
                 <button
                   className="p-1 text-blue-700"
                   onClick={() => handleEditBranch(task)}
@@ -468,6 +488,9 @@ const ProjectTaskList = () => {
                 >
                   <SquarePen size={18} />
                 </button>
+                )}
+                
+                                                                  {roleAccess?.task?.delete && (
                 <button
                   className="p-1 text-red-600"
                   onClick={() => handleDeleteBranch(task)}
@@ -475,6 +498,7 @@ const ProjectTaskList = () => {
                 >
                   <Trash2 size={18} />
                 </button>
+                )}
               </div>
             ),
             className: "action-cell",
@@ -652,14 +676,22 @@ const ProjectTaskList = () => {
                 <FileDown className="mr-1" />
                 {!isMobile && "Export Excel"}
               </button>
+              
+                                       {roleAccess?.task?.create && (
+
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
               >
                 {!isMobile && "Add New Task"} +
               </button>
+          )}
+
+
             </div>
           </div>
+
+{(userRole === "superadmin" || userRole === "admin" || userRole === "hr") && (
 
           <div
             className={`${isMobile && !showFilters ? "hidden" : "block"} mb-4`}
@@ -710,6 +742,10 @@ const ProjectTaskList = () => {
               </div>
             </div>
           </div>
+
+)}
+
+
 
           {loading && <div className="text-center py-4">Loading...</div>}
           {error && (

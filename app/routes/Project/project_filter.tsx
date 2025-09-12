@@ -1089,6 +1089,9 @@ console.log("RoleAccess:", roleAccess);
             </div>
           </div>
 
+
+      {userRole === "superadmin" && userRole === "admin" && userRole === "hr" && (
+
           <div
             className={`${isMobile && !showFilters ? "hidden" : "block"} mb-4`}
           >
@@ -1195,6 +1198,9 @@ console.log("RoleAccess:", roleAccess);
               )}
             </div>
           </div>
+
+)}
+
 
           {loading && <div className="text-center py-4">Loading...</div>}
           {error && (

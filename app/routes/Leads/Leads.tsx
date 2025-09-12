@@ -23,6 +23,10 @@ import AddNewLeadForm from "./AddNewLead";
 import EditLeadForm from "./EditLeadsForm";
 import LeadClientForm from "../Clients/LeadClientForm";
 import { useNavigate } from "react-router-dom";
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 const Leads = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [searchTerm, setSearchTerm] = useState("");
@@ -310,6 +314,121 @@ const handleConvertSuccess=()=>{
     XLSX.writeFile(wb, "LeadList.xlsx");
   };
 
+    // ✅ Export Leads List as Excel
+const handleOnExportLeads = () => {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(sheetData); // <-- your leads data array
+  XLSX.utils.book_append_sheet(wb, ws, "Leads");
+  XLSX.writeFile(wb, "LeadList.xlsx");
+};
+
+// ✅ Export Leads List as PDF
+const handleOnExportPDF = () => {
+  const doc = new jsPDF("landscape");
+
+  doc.setFontSize(14);
+  doc.text("Leads List (Summary)", 14, 10);
+
+  if (sheetData.length > 0) {
+    // Pick only important columns for PDF summary
+    const importantCols = [
+      "id",
+      "branchcode",
+      "campaign_code",
+      "lead_date",
+      "lead_name",
+      "phone",
+      "email",
+      "assignee_id",
+      "comm_type",
+      "proj_type",
+      "status",
+      "created_on",
+      "updated_on",
+    ];
+
+    const columns = importantCols.map((key) => ({
+      header: key,
+      dataKey: key,
+    }));
+
+    autoTable(doc, {
+      columns,
+      body: sheetData, // <-- your leads table data
+      startY: 20,
+      styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
+      headStyles: { fillColor: [22, 160, 133], fontSize: 9, halign: "center" },
+      theme: "grid",
+      tableWidth: "auto",
+    });
+  }
+
+  doc.save("LeadList.pdf");
+};
+
+// ✅ Download Excel Template for Leads
+const handleDownloadTemplate = () => {
+  const headers = [
+    "id",
+    "branchcode",
+    "campaign_code",
+    "lead_date",
+    "lead_name",
+    "phone",
+    "email",
+    "assignee_id",
+    "comm_type",
+    "proj_type",
+    "status",
+    "summary",
+    "created_on",
+    "updated_on",
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers]); // Only headers row
+  XLSX.utils.book_append_sheet(wb, ws, "LeadTemplate");
+
+  XLSX.writeFile(wb, "LeadTemplate.xlsx");
+};
+
+
+
+
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+   // Upload Excel handler
+const handleUpload = async () => {
+    if (!file) return alert("Please select a file first");
+
+    const formData = new FormData();
+    formData.append("file", file); // 👈 Must match multer.single("file")
+
+    try {
+      const res = await axios.post(`${BASE_URL}/leadimport`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`, // if using auth
+        },
+      });
+      console.log("Upload success:", res.data);
+      alert ("Leads list imported successfully!")
+      navigate("/leads");
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
+  };
+
+
+
+
+
+
   return (
     <>
       <div className="flex flex-col min-h-screen">
@@ -340,12 +459,74 @@ const handleConvertSuccess=()=>{
                 placeholder="Items per page"
                 className="w-full md:w-[150px]"
               />
+
+
+
+
+              <button
+                onClick={handleDownloadTemplate }
+                className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+              >
+                <FileDown className="mr-1" />
+                {!isMobile && "Download Template"}
+              </button>
+
+
+
+
+
+<div className="flex flex-col items-start">  {/* 👈 changed to items-start */}
+    <label className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5 cursor-pointer">
+      <input
+        type="file"
+        accept=".xlsx, .xls"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      <CgExport className="mr-1" />
+      Upload Excel
+    </label>
+
+
+  </div>
+
+    {/* ✅ left-aligned filename */}
+    {file && (
+      <span
+        className="text-xs text-green-500 mt-1 max-w-[140px] truncate"
+        title={file.name}
+      >
+        {file.name}
+      </span>
+    )}
+  {/* Upload button */}
+
+
+  <button
+    onClick={handleUpload}
+    className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5"
+  >
+    Upload
+  </button>
+
+
+
+
               <button
                 onClick={handleOnExport}
                 className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
               >
                 <FileDown className="mr-1" />
                 {!isMobile && "Export Excel"}
+              </button>
+
+
+<button
+                onClick={handleOnExportPDF}
+                className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+              >
+                <FileDown className="mr-1" />
+                {!isMobile && "Export PDF"}
               </button>
 
                 <button

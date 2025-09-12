@@ -1089,7 +1089,8 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
     end_date_time: "2025-02-01T23:59:59Z",
     category: "branch",
     field: "custom",
-    doc: [],
+    // doc: [],
+    doc :[] as { file: File; name: string; type: string }[],
     custom: [],
     communication_participants: [],
   });
@@ -1119,6 +1120,7 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
           .map((target) => target.branchcode)
       ),
     ];
+
 
     const fetchTeamsForBranches = async () => {
       try {
@@ -1322,21 +1324,21 @@ const BranchMeetingForm = ({ branchcode, onSuccess, onCancel }) => {
     }
   };
 
-  const handleFileUpload = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+  // const handleFileUpload = (e) => {
+  //   const files = Array.from(e.target.files);
+  //   if (files.length === 0) return;
 
-    const uploadedFiles = files.map((file) => ({
-      file, // Store the actual File object
-      name: file.name,
-      type: file.type.split("/")[1] || "file",
-    }));
+  //   const uploadedFiles = files.map((file) => ({
+  //     file, // Store the actual File object
+  //     name: file.name,
+  //     type: file.type.split("/")[1] || "file",
+  //   }));
 
-    setFormData((prev) => ({
-      ...prev,
-      doc: [...prev.doc, ...uploadedFiles],
-    }));
-  };
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     doc: [...prev.doc, ...uploadedFiles],
+  //   }));
+  // };
 
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -1493,6 +1495,26 @@ const filteredStaffOptions = staffOptions.filter((person) =>
     }
   };
 
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = Array.from(e.target.files || []); // ✅ get FileList
+  if (files.length === 0) return;
+
+  const uploadedFiles = files.map((file) => ({
+    file,  // actual File object
+    name: file.name,
+    type: file.type.split("/")[1] || "file",
+  }));
+
+  setFormData((prev) => ({
+    ...prev,
+    doc: [...prev.doc, ...uploadedFiles],
+  }));
+
+  console.log("Uploaded files:", uploadedFiles);
+};
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -1520,12 +1542,18 @@ const filteredStaffOptions = staffOptions.filter((person) =>
       const formDataToSend = new FormData();
 
       // Append the meeting data as JSON string
-      formDataToSend.append("data", JSON.stringify([meetingData]));
+      // formDataToSend.append("data", JSON.stringify([meetingData]));
 
-      // Append each file directly
-      formData.doc.forEach((fileObj) => {
-        formDataToSend.append("URL", fileObj.file);
-      });
+      // // Append each file directly
+      // formData.doc.forEach((fileObj) => {
+      //   formDataToSend.append("URL", fileObj.file);
+      // });
+
+      formDataToSend.append("data", JSON.stringify([meetingData]));
+formData.doc.forEach((fileObj) => {
+  formDataToSend.append("URL", fileObj.file); // <-- exact key multer is watching
+});
+
       console.log("formataaaanew form", formDataToSend);
       const response = await axios.post(
         `${BASE_URL}/doc_meet/create`,
@@ -1533,7 +1561,7 @@ const filteredStaffOptions = staffOptions.filter((person) =>
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
+            // "Content-Type": "multipart/form-data",
           },
         }
       );
@@ -1779,7 +1807,7 @@ const filteredStaffOptions = staffOptions.filter((person) =>
         </div>
 
         {/* File Upload (shown only for documents) */}
-        
+       {/* 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
               <FileUp className="inline mr-1" size={14} /> Documents
@@ -1810,8 +1838,48 @@ const filteredStaffOptions = staffOptions.filter((person) =>
                 ))}
               </div>
             )}
-          </div>
+          </div>*/}
         
+
+<div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              <FileUp className="inline mr-1" size={14} /> Documents
+            </p>
+        {formData.comm_type === "meeting" && (
+  <div className="bg-gray-50 ...">
+{/*    <input
+      type="file"
+      id="file-upload"
+      multiple
+      onChange={handleFileUpload}
+      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[var(--color-primary)] file:text-white hover:file:bg-[var(--color-hover)]"
+     
+    />*/}
+
+  	<input
+  type="file"
+  multiple
+  onChange={handleFileUpload}
+  name="URL"   // must match your backend multer field
+/>
+
+
+    {formData.doc.length > 0 && (
+      <div className="mt-4 space-y-2">
+        {formData.doc.map((file, index) => (
+          <div key={index} className="flex justify-between items-center ...">
+            <span>{file.name}</span>
+            <button type="button" onClick={() => removeFile(index)}>
+              <X size={16} />
+            </button>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+ </div>
+
 
         {/* Custom Filters Section (shown only when category is custom) */}
         {formData.category === "custom" && (

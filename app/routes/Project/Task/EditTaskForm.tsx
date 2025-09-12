@@ -27,7 +27,7 @@ const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
   console.log("taskkidin tssk details", taskData);
   const branchCodeOption = useBranchStore((state) => state.branchCodeOptions);
   const [loading, setLoading] = useState(false);
-  const taskId = taskData.task_id;
+  const taskId = taskData.id;
   const [fetching, setFetching] = useState(true);
   
   const staff_ids = useAuthStore((state) => state.staff_id);
@@ -674,9 +674,9 @@ const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
             required
           >
             <option value="draft">Draft</option>
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="completed">Completed</option>
+            <option value="inprocess">Active</option>
+            <option value="hold">Paused</option>
+            <option value="verified-closed">Completed</option>
             <option value="archived">Archived</option>
           </select>
         </div>

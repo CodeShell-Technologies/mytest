@@ -206,14 +206,21 @@ useEffect(() => {
         project_code:formData.project_code,
         title: formData.title,
         priority: formData.priority,
-        type: formData.type,
+        // type: formData.type,
+
+        type :formData.type === "other" ? formData.customType : formData.type,
+
+// send `finalType` to backend
+
         loc: formData.loc,
         start_date: formData.start_date,
         end_date: formData.end_date,
         handler_by: formData.handler_by,
    
         notes: formData.notes,
-        status: formData.status,
+        // status: formData.status,
+        status: formData.status === "other" ? formData.customStatus : formData.status,
+
       },
     };
 
@@ -407,6 +414,39 @@ const filtered = tamilNaduCities.filter((city) =>
     handleChange({ target: { name: "loc", value: city } } as any);
     setSuggestions([]);
   };
+
+
+const [types, setTypes] = useState<string[]>([]);
+
+ useEffect(() => {
+  const fetchTypes = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/project/overview/dropdown/type`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // optional if API requires auth
+        },
+      });
+      const json = await res.json();
+
+      if (json?.data) {
+        // Extract unique types
+        const extracted = Array.from(
+          new Set(json.data.map((item: any) => item.type))
+        );
+        setTypes(extracted);
+      } else {
+        setTypes([]);
+      }
+    } catch (error) {
+      console.error("Failed to load property types:", error);
+    }
+  };
+
+  fetchTypes();
+}, [token]);
+
+
+
 
 
   return (
@@ -867,26 +907,53 @@ const filtered = tamilNaduCities.filter((city) =>
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Tag className="inline mr-1" size={14} /> Project Type
             </p>
+            
+
+
             <select
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-              required
-            >
-              <option value="">Select type</option>
-              <option value="residential">Residential</option>
-              <option value="commercial">Commercial</option>
-              <option value="industrial">Industrial</option>
-              <option value="land">Land</option>
-            </select>
+    name="type"
+    value={formData.type}
+    onChange={(e) => {
+      const value = e.target.value;
+      if (value === "other") {
+        setFormData((prev) => ({ ...prev, type: "other", customType: "" }));
+      } else {
+        setFormData((prev) => ({ ...prev, type: value, customType: "" }));
+      }
+    }}
+    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    required
+  >
+    <option value="">Select type</option>
+    {types.map((t) => (
+      <option key={t} value={t}>
+        {t}
+      </option>
+    ))}
+    <option value="other">Other</option>
+  </select>
+
+  {/* Show custom input if "Other" selected */}
+  {formData.type === "other" && (
+    <input
+      type="text"
+      name="customType"
+      value={formData.customType || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, customType: e.target.value }))
+      }
+      className="mt-2 w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+      placeholder="Enter new type"
+      required
+    />
+  )}
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Tag className="inline mr-1" size={14} /> Status
             </p>
-            <select
+    {/*        <select
               name="status"
               value={formData.status}
               onChange={handleChange}
@@ -902,7 +969,53 @@ const filtered = tamilNaduCities.filter((city) =>
               <option value="revised">Revised</option>
               <option value="client_review">Client_review</option>
               <option value="drop">Drop</option>
-            </select>
+            </select>*/}
+
+
+            <select
+    name="status"
+    value={formData.status}
+    onChange={(e) => {
+      const value = e.target.value;
+      if (value === "other") {
+        setFormData((prev) => ({ ...prev, status: "other", customStatus: "" }));
+      } else {
+        setFormData((prev) => ({ ...prev, status: value, customStatus: "" }));
+      }
+    }}
+    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    required
+  >
+    <option value="">Select status</option>
+    <option value="draft">Draft</option>
+    <option value="planning">Planning</option>
+    <option value="inprocess">In Progress</option>
+    <option value="active">Active</option>
+    <option value="lead_review">Lead Review</option>
+    <option value="completed">Completed</option>
+    <option value="revised">Revised</option>
+    <option value="client_review">Client Review</option>
+    <option value="drop">Drop</option>
+    <option value="other">Other</option>
+  </select>
+
+  {/* Show input if "Other" selected */}
+  {formData.status === "other" && (
+    <input
+      type="text"
+      name="customStatus"
+      value={formData.customStatus || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, customStatus: e.target.value }))
+      }
+      className="mt-2 w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+      placeholder="Enter new status"
+      required
+    />
+  )}
+
+
+
           </div>
         </div>
       </div>

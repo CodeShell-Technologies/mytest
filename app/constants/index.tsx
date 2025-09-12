@@ -99,6 +99,12 @@ export const navbarLinks = [
         icon: UsersRound,
         path: "/team",
       },
+
+      {
+        label: "Team Members",
+        icon: UsersRound,
+        path: "/team",
+      },
     ],
   },
   {
@@ -144,7 +150,7 @@ export const navbarLinks = [
     ],
   },
   {
-    title: "Report Section",
+    title: "Report Analysis",
     links: [
       {
         label: "Report & Management",
@@ -177,7 +183,7 @@ export const navbarLinks = [
     title: "User Logs",
     links: [
       {
-        label: "Active Logs",
+        label: "Activity Log",
         icon: FileClock,
         path: "/active_log",
       },

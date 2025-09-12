@@ -81,6 +81,7 @@ const Attandance = () => {
         { id: "employeeattandance", label: "Attendance Log" },
         { id: "createattendance", label: "Attendance Entry" },
         { id: "attendancereport", label: "Report" },
+        {id:"attendancesheet",label:"Attendance Report"},
       ]
     : [
         { id: "employeeattandance", label: "Attendance Log" },
@@ -212,11 +213,11 @@ const Attandance = () => {
         {activeTab === "employeeattandance" && (
           <AttendanceLogList />
         )}
-        {/*{activeTab === "attendancesheet" && (
+        {activeTab === "attendancesheet" && (
           <div>
             <AttendanceReportSheet/>
           </div>
-        )}*/}
+        )}
        
 
 

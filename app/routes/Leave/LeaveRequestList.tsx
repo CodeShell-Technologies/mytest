@@ -308,7 +308,7 @@ const LeaveRequestList = () => {
     if (!leaveRequests) return [];
 
     return leaveRequests.map((request) => ({
-      id: request._id,
+      id: request.req_id,
       data: [
         { data: request.staff_id },
         { data: request.branchcode },
@@ -498,7 +498,7 @@ const LeaveRequestList = () => {
               className="min-w-full"
               enableFilters={true}
   enableSorting={true}
-
+// paginationLabel="leave requests"
             />
           </div>
 
@@ -509,7 +509,7 @@ const LeaveRequestList = () => {
               defaultPageSize={pageSize}
               onChange={handlePageChange}
               paginationLabel="leave requests"
-              isScroll={true}
+              // isScroll={true}
             />
           </div>
         </div>

@@ -24,6 +24,8 @@ import { Edit2, Eye, SquarePen, Trash2 } from "lucide-react";
 import { useMediaQuery } from "../hooks/use-click-outside";
 import ClientAddForm from "./ClientAddForm";
 import ClientEditForm from "./ClientEditForm";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Client = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
@@ -484,6 +486,115 @@ const tbody = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Branches");
     XLSX.writeFile(wb, "BranchList.xlsx");
   };
+// Export Client List as PDF
+const handleOnExportPDF = () => {
+  const doc = new jsPDF("landscape");
+
+  doc.setFontSize(14);
+  doc.text("Client List (Summary)", 14, 10);
+
+  if (sheetData.length > 0) {
+    // Pick only important columns for PDF summary
+    const importantCols = [
+      "client_code",
+      "client_name",
+      "company_name",
+      "primary_phone",
+      "email",
+      "overallcost",
+      "balance",
+      "project_count",
+      "status",
+      "created_on",
+      "updated_on",
+    ];
+
+    const columns = importantCols.map((key) => ({
+      header: key,
+      dataKey: key,
+    }));
+
+    autoTable(doc, {
+      columns,
+      body: sheetData, // <-- your client table data array
+      startY: 20,
+      styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
+      headStyles: { fillColor: [22, 160, 133], fontSize: 9, halign: "center" },
+      theme: "grid",
+      tableWidth: "auto",
+    });
+  }
+
+  doc.save("ClientList.pdf");
+};
+
+// Download Excel Template for Clients
+const handleDownloadTemplate = () => {
+  const headers = [
+    "client_code",
+    "branchcode",
+    "campaign_code",
+    "lead_id",
+    "client_name",
+    "company_name",
+    "primary_phone",
+    "email",
+    "office_address",
+    "website",
+    "overallcost",
+    "balance",
+    "project_count",
+    "contacts",      // JSON Array field
+    "createdby",
+    "updatedby",
+    "industry_type",
+    "comm_type",
+    "status",
+    "created_on",
+    "updated_on",
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers]); // Only headers row
+  XLSX.utils.book_append_sheet(wb, ws, "ClientTemplate");
+
+  XLSX.writeFile(wb, "ClientTemplate.xlsx");
+};
+
+
+
+
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+   // Upload Excel handler
+const handleUpload = async () => {
+    if (!file) return alert("Please select a file first");
+
+    const formData = new FormData();
+    formData.append("file", file); // 👈 Must match multer.single("file")
+
+    try {
+      const res = await axios.post(`${BASE_URL}/clientimport`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`, // if using auth
+        },
+      });
+      console.log("Upload success:", res.data);
+      alert ("clients imported successfully!")
+      navigate("/client");
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
+  };
+
+
+
 
   return (
     <>
@@ -515,6 +626,58 @@ const tbody = () => {
                 placeholder="Items per page"
                 className="w-full md:w-[150px]"
               />
+             
+
+
+
+              <button
+                onClick={handleDownloadTemplate }
+                className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+              >
+                <FileDown className="mr-1" />
+                {!isMobile && "Download Template"}
+              </button>
+
+
+
+
+
+<div className="flex flex-col items-start">  {/* 👈 changed to items-start */}
+    <label className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5 cursor-pointer">
+      <input
+        type="file"
+        accept=".xlsx, .xls"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      <CgExport className="mr-1" />
+      Upload Excel
+    </label>
+
+
+  </div>
+
+    {/* ✅ left-aligned filename */}
+    {file && (
+      <span
+        className="text-xs text-green-500 mt-1 max-w-[140px] truncate"
+        title={file.name}
+      >
+        {file.name}
+      </span>
+    )}
+  {/* Upload button */}
+
+
+  <button
+    onClick={handleUpload}
+    className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5"
+  >
+    Upload
+  </button>
+
+
+
               <button
                 onClick={handleOnExport}
                 className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
@@ -522,12 +685,26 @@ const tbody = () => {
                 <FileDown className="mr-1" />
                 {!isMobile && "Export Excel"}
               </button>
+
+<button
+                onClick={handleOnExportPDF}
+                className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+              >
+                <FileDown className="mr-1" />
+                {!isMobile && "Export PDF"}
+              </button>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
               >
                 {!isMobile && "New Client"} +
+
               </button>
+
+
+
+
+
             </div>
           </div>
 

@@ -380,6 +380,8 @@ const dashlinks = [{
     }];
 
 
+    
+
   const extraLinks = [
     {
       title: "Employee Management",
@@ -390,33 +392,33 @@ const dashlinks = [{
         { label: "Attandance", icon: CalendarCheck, path: "/attandance" },
       ],
     },
-    {
-      title: "Team Management",
-      links: [{ label: "Teams", icon: UsersRound, path: "/team" }],
-    },
+    // {
+    //   title: "Team Management",
+    //   links: [{ label: "Teams", icon: UsersRound, path: "/team" }],
+    // },
     
     {
       title: "Time Sheet",
       links: [{ label: "Time Sheet", icon: CalendarClock, path: "/time_sheet" }],
     },
-    {
-      title: "Account Management",
-      links: [{ label: "Accounts", icon: Calculator, path: "/account" }],
-    },
-    {
-      title: "User Logs",
-      links: [{ label: "Active Logs", icon: FileClock, path: "/active_log" }],
-    },
-    {
-      title: "Report Section",
-      links: [
-        {
-          label: "Report & Management",
-          icon: MessageCircleWarning,
-          path: "/reportAnaysis",
-        },
-      ],
-    },
+    // {
+    //   title: "Account Management",
+    //   links: [{ label: "Accounts", icon: Calculator, path: "/account" }],
+    // },
+    // {
+    //   title: "User Logs",
+    //   links: [{ label: "Active Logs", icon: FileClock, path: "/active_log" }],
+    // },
+    // {
+    //   title: "Report Section",
+    //   links: [
+    //     {
+    //       label: "Report & Management",
+    //       icon: MessageCircleWarning,
+    //       path: "/reportAnaysis",
+    //     },
+    //   ],
+    // },
   ];
 
   const finalLinks =

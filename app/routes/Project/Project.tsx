@@ -635,6 +635,8 @@ import useProjectStore from "src/stores/ProjectStore";
 import ProjectMeetingForm from "./Meeting/ProjectMeetingForm";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Project = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
@@ -733,6 +735,20 @@ const Project = () => {
     { value: 200, label: "100 per page" },
   ];
 
+
+    useEffect(() => {
+  fetch(`${BASE_URL}/get-roleaccessdetail/${UserRole}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.status) {
+        setRoleAccess(data.access);
+      }
+    });
+}, [UserRole]);
+
+console.log("RoleAccess:", roleAccess);
+
+
   useEffect(() => {
     fetchProject(token, branchcode);
   }, [token]);
@@ -748,7 +764,9 @@ const Project = () => {
     filterStartDate = startDate,
     filterEndDate = endDate,
     filterType = selectedFilterType,
-    payStatus = selectedPayStatus
+    payStatus = selectedPayStatus,
+    canCreate = roleAccess?.project?.create, // 🔹 add here
+    staff_id = UserId
   ) => {
     setLoading(true);
     try {
@@ -765,6 +783,8 @@ const Project = () => {
       if (filterEndDate) url += `&end_date=${formatDate(filterEndDate)}`;
       if (filterType) url += `&filter_type=${filterType}`;
       if (payStatus) url += `&paystatus=${payStatus}`;
+      if (canCreate !== undefined) url += `&create=${canCreate}`; // 👈 add here
+      if (staff_id !== undefined) url += `&staff_id=${staff_id}`; // 👈 add here
 
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -1072,6 +1092,7 @@ const Project = () => {
                     <Eye size={20} />
                   </button>
                 </Link>
+                  {roleAccess?.project?.edit && (
                 <button
                   className="p-1 text-[var(--color-primary)]"
                   onClick={() => handleEditBranch(project)}
@@ -1079,6 +1100,9 @@ const Project = () => {
                 >
                   <SquarePen size={18} />
                 </button>
+                )}
+
+                  {roleAccess?.project?.delete && (
                 <button
                   className="p-1 text-red-600"
                   onClick={() => handleDeleteBranch(project)}
@@ -1086,6 +1110,10 @@ const Project = () => {
                 >
                   <Trash2 size={18} />
                 </button>
+              )}
+
+
+
               </div>
             ),
             className: "action-cell",
@@ -1198,19 +1226,116 @@ const Project = () => {
     XLSX.writeFile(wb, "ProjectList.xlsx");
   };
 
+const handleOnExportPDF = () => {
+  const doc = new jsPDF("landscape");
 
+  doc.setFontSize(14);
+  doc.text("Project List (Summary)", 14, 10);
 
-  useEffect(() => {
-  fetch(`${BASE_URL}/get-roleaccessdetail/${UserRole}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.status) {
-        setRoleAccess(data.access);
-      }
+  if (sheetData.length > 0) {
+    // Pick only important columns
+    const importantCols = [
+      "project_code",
+      "title",
+      "priority",
+      "status",
+      "budget",
+      "revised_cost",
+      "handler_by",
+      "start_date",
+      "end_date",
+    ];
+
+    const columns = importantCols.map((key) => ({
+      header: key,
+      dataKey: key,
+    }));
+
+    autoTable(doc, {
+      columns,
+      body: sheetData,
+      startY: 20,
+      styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
+      headStyles: { fillColor: [22, 160, 133], fontSize: 9, halign: "center" },
+      theme: "grid",
+      tableWidth: "auto",
     });
-}, [UserRole]);
+  }
 
-console.log("RoleAccess:", roleAccess);
+  doc.save("ProjectList.pdf");
+};
+
+const handleDownloadTemplate = () => {
+  const headers = [
+    "project_code",
+    "branchcode",
+    "campaign_code",
+    "lead_id",
+    "client_code",
+    "title",
+    "priority",
+    "type",
+    "loc",
+    "notes",
+    "budget",
+    "revised_cost",
+    "balance",
+    "paystatus",
+    "start_date",
+    "end_date",
+    "duration_days",
+    "handler_by",
+    "createby",
+    "updatedby",
+    "revised_count",
+    "additional",
+    "milestone_count",
+    "status",
+    "created_on",
+    "updated_on",
+    "overallcost",
+    "reason",
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers]); // Only headers row
+  XLSX.utils.book_append_sheet(wb, ws, "ProjectTemplate");
+
+  XLSX.writeFile(wb, "ProjectTemplate.xlsx");
+};
+
+const [file, setFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+   // Upload Excel handler
+const handleUpload = async () => {
+    if (!file) return alert("Please select a file first");
+
+    const formData = new FormData();
+    formData.append("file", file); // 👈 Must match multer.single("file")
+
+    try {
+      const res = await axios.post(`${BASE_URL}/projectimport`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`, // if using auth
+        },
+      });
+      console.log("Upload success:", res.data);
+      alert ("projects imported successfully!")
+      navigate("/project");
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
+  };
+
+
+
+
 
 
   return (
@@ -1243,6 +1368,58 @@ console.log("RoleAccess:", roleAccess);
                 placeholder="Items per page"
                 className="w-full md:w-[150px]"
               />
+
+
+ {(UserRole === "superadmin" || UserRole === "admin" || UserRole === "hr") && (
+              <button
+                onClick={handleDownloadTemplate }
+                className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+              >
+                <FileDown className="mr-1" />
+                {!isMobile && "Download Template"}
+              </button>
+
+              )}
+
+
+
+
+<div className="flex flex-col items-start">  {/* 👈 changed to items-start */}
+    <label className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5 cursor-pointer">
+      <input
+        type="file"
+        accept=".xlsx, .xls"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      <CgExport className="mr-1" />
+      Upload Excel
+    </label>
+
+
+  </div>
+
+    {/* ✅ left-aligned filename */}
+    {file && (
+      <span
+        className="text-xs text-green-500 mt-1 max-w-[140px] truncate"
+        title={file.name}
+      >
+        {file.name}
+      </span>
+    )}
+  {/* Upload button */}
+
+
+  <button
+    onClick={handleUpload}
+    className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5"
+  >
+    Upload
+  </button>
+
+
+ {(UserRole === "superadmin" || UserRole === "admin" || UserRole === "hr") && (
               <button
                 onClick={handleOnExport}
                 className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
@@ -1250,6 +1427,8 @@ console.log("RoleAccess:", roleAccess);
                 <FileDown className="mr-1" />
                 {!isMobile && "Export Excel"}
               </button>
+
+              )}
             {/*  <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
@@ -1257,6 +1436,16 @@ console.log("RoleAccess:", roleAccess);
                 {!isMobile && "New Project"} +
               </button>*/}
 
+
+ {(UserRole === "superadmin" || UserRole === "admin" || UserRole === "hr") && (
+<button
+                onClick={handleOnExportPDF}
+                className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+              >
+                <FileDown className="mr-1" />
+                {!isMobile && "Export PDF"}
+              </button>
+              )}
 
               	{roleAccess?.project?.create && (
   <button
@@ -1269,6 +1458,8 @@ console.log("RoleAccess:", roleAccess);
 
             </div>
           </div>
+
+{(UserRole === "superadmin" || UserRole === "admin" || UserRole === "hr") && (
 
           <div
             className={`${isMobile && !showFilters ? "hidden" : "block"} mb-4`}
@@ -1376,6 +1567,9 @@ console.log("RoleAccess:", roleAccess);
               )}
             </div>
           </div>
+
+          )}
+
 
           {loading && <div className="text-center py-4">Loading...</div>}
           {error && (

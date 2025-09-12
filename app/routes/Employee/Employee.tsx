@@ -32,6 +32,8 @@ import EmployeeForm from "./AddEmployeeForm";
 import OfferLettersGenerative from "./offerletters/OfferLettersGenerative";
 import Termination from "./termination/Termination";
 import SalaryRevisionTracker from "./Salary/SalaryRevision";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Employee = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
@@ -340,6 +342,127 @@ const Employee = () => {
     { id: "interview", label: "Offer letters" },
   ];
 
+
+
+
+// Export Employees (Userinfo) as PDF
+const handleOnExportPDF = () => {
+  const doc = new jsPDF("landscape");
+
+  doc.setFontSize(14);
+  doc.text("Employee List (Summary)", 14, 10);
+
+  if (sheetData.length > 0) {
+    // Pick only important columns for PDF summary
+    const importantCols = [
+      "staff_id",
+      "firstname",
+      "lastname",
+      "role",
+      "department",
+      "designation",
+      "phonenumber",
+      "email",
+      "dateofjoining",
+      "status",
+      "create_datetime",
+      "last_update_datetime",
+    ];
+
+    const columns = importantCols.map((key) => ({
+      header: key,
+      dataKey: key,
+    }));
+
+    autoTable(doc, {
+      columns,
+      body: sheetData, // <-- your userinfo table data array
+      startY: 20,
+      styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
+      headStyles: { fillColor: [22, 160, 133], fontSize: 9, halign: "center" },
+      theme: "grid",
+      tableWidth: "auto",
+    });
+  }
+
+  doc.save("EmployeeList.pdf");
+};
+
+// Download Excel Template for Employees (Userinfo)
+const handleDownloadTemplate = () => {
+  const headers = [
+    "staff_id",
+    "branchcode",
+    "role",
+    "firstname",
+    "lastname",
+    "dob",
+    "gender",
+    "marital",
+    "bloodgroup",
+    "phonenumber",
+    "alternumber",
+    "email",
+    "password",
+    "permanentaddress",
+    "presentaddress",
+    "department",
+    "designation",
+    "pannumber",
+    "aadharnumber",
+    "profileurl",
+    "dateofjoining",
+    "relivingdate",
+    "status",
+    "notes",
+    "create_datetime",
+    "last_update_datetime",
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([headers]); // Only headers row
+  XLSX.utils.book_append_sheet(wb, ws, "EmployeeTemplate");
+
+  XLSX.writeFile(wb, "EmployeeTemplate.xlsx");
+};
+
+
+
+
+
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+   // Upload Excel handler
+const handleUpload = async () => {
+    if (!file) return alert("Please select a file first");
+
+    const formData = new FormData();
+    formData.append("file", file); // 👈 Must match multer.single("file")
+
+    try {
+      const res = await axios.post(`${BASE_URL}/staffimport`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`, // if using auth
+        },
+      });
+      console.log("Upload success:", res.data);
+      alert ("employee list imported successfully!")
+      navigate("/employee");
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
+  };
+
+
+
+
+
   return (
     <div className="flex flex-col min-h-screen gap-15">
       <div className="  dark:border-gray-700 ">
@@ -395,6 +518,57 @@ const Employee = () => {
                       placeholder="Items per page"
                       className="w-full md:w-[150px]"
                     />
+                   
+
+                              <button
+                onClick={handleDownloadTemplate }
+                className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+              >
+                <FileDown className="mr-1" />
+                {!isMobile && "Download Template"}
+              </button>
+
+
+
+
+
+<div className="flex flex-col items-start">  {/* 👈 changed to items-start */}
+    <label className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5 cursor-pointer">
+      <input
+        type="file"
+        accept=".xlsx, .xls"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      <CgExport className="mr-1" />
+      Upload Excel
+    </label>
+
+
+  </div>
+
+    {/* ✅ left-aligned filename */}
+    {file && (
+      <span
+        className="text-xs text-green-500 mt-1 max-w-[140px] truncate"
+        title={file.name}
+      >
+        {file.name}
+      </span>
+    )}
+  {/* Upload button */}
+
+
+  <button
+    onClick={handleUpload}
+    className="flex items-center justify-center text-gray-400 bg-white font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-green-700/70 px-3 py-2.5"
+  >
+    Upload
+  </button>
+
+
+
+
                     <button
                       onClick={handleOnExport}
                       className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
@@ -402,6 +576,15 @@ const Employee = () => {
                       <FileDown className="mr-1" />
                       Export Excel
                     </button>{" "}
+
+
+<button
+                onClick={handleOnExportPDF}
+                className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+              >
+                <FileDown className="mr-1" />
+                {!isMobile && "Export PDF"}
+              </button>
                     <button
                       onClick={() => setShowCreateModal(true)}
                       className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"

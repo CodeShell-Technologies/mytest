@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  // baseURL: 'http://localhost:3000/api',
-  baseURL: 'https://almino-testing.onrender.com/api',
+  baseURL: 'http://localhost:3000/api',
+  // baseURL: 'https://almino-testing.onrender.com/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

@@ -48,11 +48,44 @@ const Leave = () => {
   const [activeTab, setActiveTab] = useState("leavereq");
  
   
+  const permissions = useAuthStore((state) => state.permissions);
+  const userRole = permissions[0].role;
+
+  const [roleAccess, setRoleAccess] = useState(null); // ✅ define here
+
+  
+
+    useEffect(() => {
+  fetch(`${BASE_URL}/get-roleaccessdetail/${userRole}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.status) {
+        setRoleAccess(data.access);
+      }
+    });
+}, [userRole]);
+
+console.log("RoleAccess:", roleAccess);
+
+roleAccess?.leaveapproved?.all
   // Tab configuration
-  const tabs = [
-    { id: "leavereq", label: "Leave Request" },
-    { id: "leavetype", label: "Leave Types" },
-  ];
+  // const tabs = [
+  //   { id: "leavereq", label: "Leave Request" },
+  //   { id: "leavetype", label: "Leave Types" },
+  // ];
+
+  const tabs = roleAccess?.leaveapproved?.all
+  ? [
+      { id: "leavereq", label: "Leave Request" },
+      { id: "leavetype", label: "Leave Types" },
+    ]
+  : [
+      { id: "leavereq", label: "Leave Request" }
+    ];
+
+
+
+
 
   return (
     <div className="flex flex-col min-h-screen">
