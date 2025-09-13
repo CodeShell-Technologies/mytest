@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BASE_URL } from "~/constants/api";
 import { Toaster } from "react-hot-toast";
-import { Video, Users, ChevronUp, ChevronDown, X } from "lucide-react";
+import { Video, Users, ChevronUp, ChevronDown, X ,  ClipboardList,} from "lucide-react";
 import ButtonLoader from "./ButtonLoader";
 import { useParams } from "react-router-dom";
 import { useAuthStore } from "src/stores/authStore";
-
+// import { useState } from "react";
+import jsPDF from "jspdf";
 const EditMeetingModal = ({ onUpdated, onCancel }) => {
   const { id } = useParams();
   const token = useAuthStore((state) => state.accessToken);
@@ -20,7 +21,7 @@ const EditMeetingModal = ({ onUpdated, onCancel }) => {
     title: "",
     notes: "",
     comm_type: "meeting",
-    status: "active",
+    status: "",
     doc_status: "none",
     meet_link: "",
     start_date_time: "",
@@ -117,13 +118,53 @@ const EditMeetingModal = ({ onUpdated, onCancel }) => {
   };
 
   // Add NEW docs only (don't touch existingDocs)
-  const handleNewFileUpload = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    setNewDocs((prev) => [
-      ...prev,
-      ...files.map((f) => ({ url: f.name, type: f.type || "file" })),
-    ]);
+  // const handleNewFileUpload = (e) => {
+  //   const files = Array.from(e.target.files || []);
+  //   if (!files.length) return;
+  //   setNewDocs((prev) => [
+  //     ...prev,
+  //     ...files.map((f) => ({ url: f.name, type: f.type || "file" })),
+  //   ]);
+  // };
+
+
+
+  const handleNewFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+
+  try {
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // Call backend upload API
+      const res = await axios.post(`${BASE_URL}/uploadedit/documents`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // Add uploaded doc info (url, type) to newDocs state
+      setNewDocs((prev) => [...prev, res.data]);
+    }
+  } catch (error) {
+    console.error("File upload failed:", error);
+    alert("File upload failed, please try again.");
+  }
+};
+
+
+
+ const generatePDF = () => {
+    const doc = new jsPDF();
+    doc.setFont("times", "normal");
+    doc.setFontSize(12);
+
+    // Wrap text properly
+    const splitText = doc.splitTextToSize(formData.notes, 180);
+    doc.text(splitText, 15, 20);
+
+    // doc.save(`minutes of meeting-${formData.meet_id.pdf``);
+    doc.save(`MOM-${formData.meet_id}.pdf`);
   };
 
   // Remove a NEW doc (no need to tell backend—it's not saved yet)
@@ -245,6 +286,15 @@ const EditMeetingModal = ({ onUpdated, onCancel }) => {
 
     // If your backend expects "remove_index" (singular), rename the key above.
 
+const fd = new FormData();
+fd.append("data", JSON.stringify(payload));
+
+newDocs.forEach((fileObj) => {
+  fd.append("URL", fileObj.file); // assuming fileObj.file is the actual File object
+});
+
+
+
     try {
       const res = await axios.put(
         `${BASE_URL}/doc_meet/edit/${formData.meet_id}`,
@@ -323,6 +373,13 @@ const EditMeetingModal = ({ onUpdated, onCancel }) => {
   rows={20}   // 👈 bigger size
   className="w-full bg-gray-50 dark:bg-gray-700 p-3 rounded resize-y"
 />
+<button
+        type="button"
+        onClick={generatePDF}
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Generate Notes to PDF
+      </button>
       {/* Existing Documents */}
       <div className="space-y-2">
         <p className="text-sm font-semibold">Existing Documents</p>
@@ -350,6 +407,7 @@ const EditMeetingModal = ({ onUpdated, onCancel }) => {
         )}
       </div>
 
+
       {/* Add New Documents */}
       <div className="space-y-2">
         <p className="text-sm font-semibold">Add Documents</p>
@@ -371,6 +429,26 @@ const EditMeetingModal = ({ onUpdated, onCancel }) => {
           </div>
         ))}
       </div>
+
+
+
+
+<div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <ClipboardList className="inline mr-1" size={14} /> Status
+            </p>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+              required
+            >
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="declined">Declined</option>
+            </select>
+          </div>
 
       {/* Participants */}
       <div>
