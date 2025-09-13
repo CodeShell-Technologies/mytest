@@ -346,7 +346,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
               value={formData.industry_type}
               onChange={handleChange}
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-              required
+              
             >
               {industryOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -380,7 +380,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
               onChange={handleChange}
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
               disabled={!formData.branchcode || isFetchingLeads}
-              required
+              
             >
               <option value="">Select Lead</option>
               {isFetchingLeads ? (
@@ -413,7 +413,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
             onChange={handleChange}
             className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none min-h-[80px]"
             placeholder="Office Address"
-            required
+            
           />
         </div>
       </div>
@@ -438,7 +438,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
                 className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
                 type="text"
                 placeholder="Contact Name"
-                required
+              
               />
             </div>
 
@@ -453,7 +453,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
                 className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
                 type="text"
                 placeholder="Designation"
-                required
+            
               />
             </div>
 
@@ -468,7 +468,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
                 className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
                 type="text"
                 placeholder="Phone"
-                required
+            
               />
             </div>
 
@@ -483,7 +483,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
                 className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
                 type="email"
                 placeholder="Email"
-                required
+                
               />
             </div>
 
@@ -523,7 +523,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
               value={formData.comm_type}
               onChange={handleChange}
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-              required
+            
             >
               {communicationOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -542,7 +542,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
               value={formData.status}
               onChange={handleChange}
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-              required
+          
             >
               {statusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
