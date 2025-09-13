@@ -49,12 +49,14 @@ const Leads = () => {
   const [selectedBranchCode, setSelectedBranchCode] = useState("");
   const [pageSize, setPageSize] = useState(8);
   const [showFilters, setShowFilters] = useState(false);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const { fetchLeads, isStoreLoading } = useLeadsStore();
   const branchCodeOptions = useBranchStore((state) => state.branchCodeOptions);
   const branchcode = useAuthStore((state) => state.branchcode);
   const [filters, setFilters] = useState({});
 const [sortConfig, setSortConfig] = useState(null);
+
+       const [hydrated, setHydrated] = useState(false);
 
  const navigate = useNavigate();
 
@@ -63,9 +65,40 @@ const [sortConfig, setSortConfig] = useState(null);
     { value: "active", label: "Active Branches" },
     { value: "inactive", label: "Inactive Branches" },
   ];
+
+
+
+
+      // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+
+useEffect(() => {
+  if (hydrated && token) {
     fetchLeads(token, branchcode);
-  }, [token, branchcode]);
+  }
+}, [hydrated, token,branchcode]);
+
+
+  // useEffect(() => {
+  //   fetchLeads(token, branchcode);
+  // }, [token, branchcode]);
+
+
+
   const pageSizeOptions = [
     { value: 20, label: "20 per page" },
     { value: 40, label: "30 per page" },
@@ -109,9 +142,15 @@ const [sortConfig, setSortConfig] = useState(null);
     }
   };
 
+
+
   useEffect(() => {
+       if (hydrated && token) {
     getBranch();
+  }
   }, [
+     hydrated,
+    token,
     currentPage,
     searchTerm,
     selectStatus,

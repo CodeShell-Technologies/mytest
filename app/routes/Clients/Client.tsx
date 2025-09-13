@@ -48,10 +48,14 @@ const Client = () => {
   const [selectedBranchCode, setSelectedBranchCode] = useState("");
   const [pageSize, setPageSize] = useState(5);
   const [showFilters, setShowFilters] = useState(false);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const [deleteType, setDeleteType] = useState("permanent");
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
+
+
+       const [hydrated, setHydrated] = useState(false);
+
 
   const {
     branches,
@@ -76,9 +80,29 @@ const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({}
     { value: 200, label: "100 per page" },
   ];
 
+
+      // wait for Zustand persist to hydrate
   useEffect(() => {
-    fetchBranches(token);
-  }, [token]);
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+useEffect(() => {
+  if (hydrated && token) {
+       fetchBranches(token);
+  }
+}, [hydrated, token]);
+
 
   const getClient = async (
     page = currentPage,
@@ -114,9 +138,15 @@ const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({}
     }
   };
 
+
   useEffect(() => {
+   if (hydrated && token) {
     getClient();
+  }
+
   }, [
+    hydrated,
+    token,
     currentPage,
     searchTerm,
     selectStatus,

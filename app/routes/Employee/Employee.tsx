@@ -56,7 +56,7 @@ const Employee = () => {
   const [selectedBranchCode, setSelectedBranchCode] = useState("");
   const [pageSize, setPageSize] = useState(5);
   const [showFilters, setShowFilters] = useState(false);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const [activeTab, setActiveTab] = useState("employee");
   const { fetchEmployee, fetchBranchEmployee, isStoreLoading } =
     useEmployeeStore();
@@ -71,6 +71,10 @@ const Employee = () => {
     { value: "active", label: "Active Employees" },
     { value: "inactive", label: "Inactive Employees" },
   ];
+
+         const [hydrated, setHydrated] = useState(false);
+
+
   const branchcode = useAuthStore((state) => state.branchcode);
   console.log("branchcodefor employee", branchcode);
   const pageSizeOptions = [
@@ -82,10 +86,30 @@ const Employee = () => {
     { value: 200, label: "100 per page" },
   ];
   const navigate = useNavigate();
+
+      // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+  useEffect(() => {
+    if (hydrated && token) {
     fetchEmployee(token);
-    fetchBranchEmployee(token, branchcode);
-  }, [token, branchcode]);
+    fetchBranchEmployee(token, branchcode);  
+    }
+    
+  }, [token, branchcode,hydrated]);
 
   const getEmployee = async (
     page = currentPage,
@@ -123,8 +147,12 @@ const Employee = () => {
   };
 
   useEffect(() => {
+    if (hydrated && token) {
     getEmployee();
+  }
   }, [
+    hydrated,
+    token,
     currentPage,
     searchTerm,
     selectStatus,

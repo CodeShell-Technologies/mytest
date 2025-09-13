@@ -473,7 +473,7 @@ useEffect(() => {
               onChange={handleChange}
               type="date"
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-              required
+              
             />
           </div>
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
@@ -631,7 +631,7 @@ useEffect(() => {
               value={formData.comm_type}
               onChange={handleChange}
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-              required
+            
             >
               <option value="">Select type</option>
               <option value="email">Email</option>
@@ -651,7 +651,7 @@ useEffect(() => {
               value={formData.proj_type}
               onChange={handleChange}
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-              required
+              
             >
               <option value="">Select type</option>
               <option value="residential">Residential</option>
@@ -670,7 +670,7 @@ useEffect(() => {
               value={formData.status}
               onChange={handleChange}
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
-              required
+            
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>

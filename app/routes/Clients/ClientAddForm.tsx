@@ -224,7 +224,7 @@ const ClientAddForm = ({ onSuccess, onCancel }) => {
       }
     } catch (err) {
       setError(err.response?.data?.message || "An error occurred");
-      toast.error(error || "Error creating client");
+      // toast.error(error || "Error creating client");
     } finally {
       setLoading(false);
     }
