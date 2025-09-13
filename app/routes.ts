@@ -1,5 +1,5 @@
 import { type RouteConfig, index, route } from "@react-router/dev/routes";
-import AuthProvider from "../src/component/AuthProvider";
+import AuthProvider from "../src/component/authProvider";
 
 // export default [
 //   route("/login", "routes/Login.tsx"),
