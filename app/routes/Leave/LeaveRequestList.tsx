@@ -48,12 +48,8 @@ const LeaveRequestList = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showApprovedModal, setShowApprovedModal] = useState(false);
   // Auth store data
-  const token = useAuthStore((state) => state.accessToken);
-  const permission = useAuthStore((state) => state.permissions);
-  const staff_id = useAuthStore((state) => state.staff_id);
-  const userBranchCode = useAuthStore((state) => state.branchcode);
-  const role = permission[0]?.role || "employee";
-
+  const accesstoken = useAuthStore((state) => state.accessToken);
+  
   const {
     branchCodeOptions,
     fetchBranches,
@@ -74,6 +70,37 @@ const LeaveRequestList = () => {
     { value: "rejected", label: "Rejected" },
   ];
 
+  const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+
+
+// const permission = useAuthStore((state) => state.permissions);
+  const staff_id = useAuthStore((state) => state.staff_id);
+  const userBranchCode = useAuthStore((state) => state.branchcode);
+  // const role = permission[0]?.role || "employee";
+
+
+const token = accesstoken;
+
+const permissions = useAuthStore((state) => state.permissions);
+const userRole = permissions?.[0]?.role || null;
+const role = userRole;
+
   const [selectedStatus, setSelectedStatus] = useState("");
 
   // Filter branch options based on user role
@@ -89,17 +116,21 @@ const LeaveRequestList = () => {
   };
 
   useEffect(() => {
+    if (hydrated && token) {
     if (role === "superadmin" || role === "hr") {
       fetchBranches(token);
     }
-  }, [token, role]);
+  }
+  }, [hydrated,token, role]);
 
   // Set initial branch code for HR
   useEffect(() => {
+    if (hydrated && token) {
     if (role === "hr") {
       setSelectedBranchCode(userBranchCode);
     }
-  }, [role, userBranchCode]);
+  }
+  }, [hydrated,token,role, userBranchCode]);
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
     toast.success("Leave create Request successfully!");
@@ -108,13 +139,16 @@ const LeaveRequestList = () => {
 
   // Set staff ID for employees (non-HR, non-superadmin)
   useEffect(() => {
+    if (hydrated && token) {
     if (role !== "hr" && role !== "superadmin") {
       setSelectedStaffId(staff_id);
     }
-  }, [role, staff_id]);
+  }
+  }, [hydrated,token,role, staff_id]);
 
   // Fetch staff options when branch code changes (for superadmin and HR)
   useEffect(() => {
+    if (hydrated && token) {
     const getStaffOptions = async () => {
       if (
         (role === "superadmin" && !selectedBranchCode) ||
@@ -150,7 +184,8 @@ const LeaveRequestList = () => {
     if (role === "superadmin" || role === "hr") {
       getStaffOptions();
     }
-  }, [selectedBranchCode, token, role, userBranchCode]);
+  }
+}, [hydrated,selectedBranchCode, token, role, userBranchCode]);
 
   // Fetch leave requests
   const fetchLeaveRequests = async () => {
@@ -270,8 +305,13 @@ const LeaveRequestList = () => {
   };
 
   useEffect(() => {
+    if (hydrated && token) {
+
     fetchLeaveRequests();
+  }
   }, [
+    hydrated,
+    token,
     currentPage,
     pageSize,
     selectedBranchCode,

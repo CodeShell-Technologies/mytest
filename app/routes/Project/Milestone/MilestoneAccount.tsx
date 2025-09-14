@@ -66,7 +66,7 @@ const MilestoneAccount = ({projectData}) => {
     userRole === "superadmin"
       ? branchCode
       : [{ value: branchcodeForNor, label: branchcodeForNor }];
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
 
   const {
     branches,
@@ -101,9 +101,35 @@ const MilestoneAccount = ({projectData}) => {
     { value: 200, label: "100 per page" },
   ];
 
+
+
+  const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+
+  useEffect(() => {
+
+if (hydrated && token) {
     fetchBranches(token);
-  }, [token]);
+  }
+  }, [hydrated,token]);
 
   const getBranch = async (
     page = currentPage,
@@ -140,8 +166,12 @@ const MilestoneAccount = ({projectData}) => {
   };
 
   useEffect(() => {
+   if (hydrated && token) {
     getBranch();
+  }
   }, [
+   hydrated,
+   token,
     currentPage,
     searchTerm,
     selectStatus,

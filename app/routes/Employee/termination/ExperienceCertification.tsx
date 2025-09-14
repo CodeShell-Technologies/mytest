@@ -11,7 +11,7 @@ const ExperienceCertificate = () => {
   const navigate = useNavigate();
   const componentRef = useRef();
   const { id, resign_id } = useParams();
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
 
   const req_id = decodeURIComponent(resign_id);
   // Get both staff_id and resign_id from params
@@ -19,6 +19,28 @@ const ExperienceCertificate = () => {
   const [terminationData, setTerminationData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+
+       const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
 
   const fetchEmployeeData = async () => {
     try {
@@ -66,9 +88,11 @@ const ExperienceCertificate = () => {
   };
 
   useEffect(() => {
+    if (hydrated && token) {
     fetchEmployeeData();
     fetchTerminationData();
-  }, [id, resign_id]);
+  }
+  }, [hydrated,token,id, resign_id]);
 
   const handlePrint = () => {
     const printContent = document.getElementById("print").innerHTML;

@@ -36,7 +36,7 @@ const InvoiceList = () => {
     notes: "",
   });
 
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const userRole = useAuthStore((state) => state.role);
   const staticBranchCode = "BRANCH-03";
   const navigate = useNavigate();
@@ -138,9 +138,33 @@ const InvoiceList = () => {
     }));
   };
 
+     const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+  useEffect(() => {
+   if (hydrated && token) {
     getPayments();
+  }
   }, [
+    hydrated,
+    token,
     currentPage,
     searchTerm,
     selectStatus,

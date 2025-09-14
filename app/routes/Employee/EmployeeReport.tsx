@@ -17,9 +17,36 @@ const EmployeeReport = () => {
   const [endDate, setEndDate] = useState(null);
 
   // Auth store data
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
 const staff_id=useAuthStore((state)=>state.staff_id)
   // Fetch user summary data
+  
+const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+
+
+
+
+
+
   const fetchUserSummaryData = async () => {
     if (!staff_id || !startDate || !endDate) {
       setUserSummaryData(null);

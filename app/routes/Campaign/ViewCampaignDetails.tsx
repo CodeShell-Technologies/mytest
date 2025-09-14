@@ -31,9 +31,10 @@ const CampaignPage = () => {
   const [selectStatus, setSelectStatus] = useState("");
   const [campaignData, setCampaignData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const { id } = useParams();
   const campaign_code = decodeURIComponent(id);
+  const [hydrated, setHydrated] = useState(false);
   
   const filterOptions = [
     { value: "client", label: "Client" },
@@ -66,9 +67,29 @@ const CampaignPage = () => {
     }
   };
 
+      // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+
+
+  useEffect(() => {
+      if (hydrated && token) {
     getCampaign();
-  }, [campaign_code]);
+  }
+  }, [hydrated,token,campaign_code]);
 
   const thead = () => [
     { data: "Lead ID" },

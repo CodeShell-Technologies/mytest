@@ -196,6 +196,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import alminoLogo from "../../../assets/Almino structural consultancy_Final.png";
 import alminoSeal from "../../../assets/almino seal.png";
+import { useAuthStore } from "src/stores/authStore";
 
 const OfferLetterView = () => {
   const { id } = useParams();
@@ -203,7 +204,36 @@ const OfferLetterView = () => {
   const componentRef = useRef();
   const [offerLetter, setOfferLetter] = useState(null);
 
+const accesstoken = useAuthStore((state) => state.accessToken);
+
+
+
+       const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+
+
+
+  useEffect(() => {
+
+if (hydrated && token) {
     const savedLetters = localStorage.getItem("offerLetters");
     if (savedLetters) {
       const letters = JSON.parse(savedLetters);
@@ -212,7 +242,8 @@ const OfferLetterView = () => {
         setOfferLetter(foundLetter);
       }
     }
-  }, [id]);
+  }
+  }, [hydrated,token,id]);
 
   const handlePrint = () => {
     const printContent = document.getElementById("print").innerHTML;

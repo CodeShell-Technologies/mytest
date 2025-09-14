@@ -44,18 +44,38 @@ const Leave = () => {
   const [selectedBranchCode, setSelectedBranchCode] = useState("");
   const [pageSize, setPageSize] = useState(8);
   const [showFilters, setShowFilters] = useState(false);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const [activeTab, setActiveTab] = useState("leavereq");
  
-  
-  const permissions = useAuthStore((state) => state.permissions);
-  const userRole = permissions[0].role;
+  ;
 
   const [roleAccess, setRoleAccess] = useState(null); // ✅ define here
 
-  
+   const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const permissions = useAuthStore((state) => state.permissions);
+const userRole = permissions?.[0]?.role || null;
+
+const token = accesstoken;  
+
 
     useEffect(() => {
+      if (hydrated && token &&userRole) {
   fetch(`${BASE_URL}/get-roleaccessdetail/${userRole}`)
     .then(res => res.json())
     .then(data => {
@@ -63,7 +83,8 @@ const Leave = () => {
         setRoleAccess(data.access);
       }
     });
-}, [userRole]);
+  }
+}, [hydrated,token,userRole]);
 
 console.log("RoleAccess:", roleAccess);
 

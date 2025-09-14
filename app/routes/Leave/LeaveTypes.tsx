@@ -40,7 +40,7 @@ const LeaveTypes = () => {
   const [selectedBranchCode, setSelectedBranchCode] = useState("");
   const [pageSize, setPageSize] = useState(8);
   const [showFilters, setShowFilters] = useState(false);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const branchCode = useAuthStore((state) => state.branchcode);
 
   const {
@@ -60,9 +60,32 @@ const LeaveTypes = () => {
     { value: 200, label: "100 per page" },
   ];
 
+
+      const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+  useEffect(() => {
+    if (hydrated && token) {
     fetchBranches(token);
-  }, [token]);
+  }
+  }, [hydrated,token]);
 
   const getSoftware = async (
     page = currentPage,
@@ -99,8 +122,12 @@ const LeaveTypes = () => {
   };
 
   useEffect(() => {
+    if (hydrated && token) {
     getSoftware();
+  }
   }, [
+   hydrated,
+   token,
     currentPage,
     searchTerm,
     selectStatus,
@@ -225,14 +252,14 @@ const LeaveTypes = () => {
         {
           data: (
             <div className="flex  justify-center gap-1 ">
-              <Link to={`/branch/${software.id}`}>
+              {/*<Link to={`/branch/${software.id}`}>
                 <button
                   className="p-1 text-blue-700 rounded hover:text-gray-500 dark:hover:text-gray-300"
                   title="View"
                 >
                   <Eye size={18} />
                 </button>
-              </Link>
+              </Link>*/}
               <button
                 className="p-1 text-[var(--color-primary)] rounded hover:text-gray-500 dark:hover:text-gray-300"
                 onClick={() => handleEditBranch(software)}

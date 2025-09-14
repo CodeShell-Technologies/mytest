@@ -42,7 +42,7 @@ const LeadsPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedFollowup, setSelectedFollowup] = useState(null);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const { id } = useParams();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const filterOptions = [
@@ -57,6 +57,27 @@ const LeadsPage = () => {
     { value: "Paid", label: "Paid" },
     { value: "Un Paid", label: "Un-Paid" },
   ];
+
+
+  const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
 
   const getLead = async () => {
     try {
@@ -188,8 +209,10 @@ const LeadsPage = () => {
   };
 
   useEffect(() => {
+    if (hydrated && token) {
     getLead();
-  }, [id]);
+  }
+  }, [hydrated,token,id]);
 
   if (loading)
     return (

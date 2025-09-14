@@ -24,12 +24,12 @@ const Attandance = () => {
   const [selectStatus, setSelectStatus] = useState("");
   const [activeTab, setActiveTab] = useState("employeeattandance");
 
-  const token = useAuthStore((state) => state.accessToken);
-  const permission = useAuthStore((state) => state.permissions);
+  const accesstoken = useAuthStore((state) => state.accessToken);
+  // const permission = useAuthStore((state) => state.permissions);
   const staff_id = useAuthStore((state) => state.staff_id);
   const userBranchCode = useAuthStore((state) => state.branchcode);
   // const [showEditModal, setShowEditModal] = useState(false);
-  const role = useAuthStore((state) => state.role);
+  // const role = useAuthStore((state) => state.role);
 
   const filterOptions = [
     { value: "client", label: "Client" },
@@ -68,6 +68,31 @@ const Attandance = () => {
   ];
 
 
+  const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+const permission = useAuthStore((state) => state.permissions);
+const userRole = permission?.[0]?.role || null;
+
+const role = useAuthStore((state) => state.role);
+
+
   // const tabs = [
   //   { id: "employeeattandance", label: " Attendance Log" },
   //   { id: "createattendance", label: " Attendance Entry" },
@@ -94,8 +119,11 @@ const Attandance = () => {
   };
 
   useEffect(() => {
+    if (hydrated && token) {
     setSheetData(getData());
-  }, []);
+  }
+  }, [hydrated,token]);
+
 
   const thead = () => [
     { data: "Employee ID" },

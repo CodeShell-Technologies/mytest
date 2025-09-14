@@ -53,10 +53,10 @@ const AccountsProject = () => {
   const [selectedBranchCode, setSelectedBranchCode] = useState("");
   const [pageSize, setPageSize] = useState(8);
   const [showFilters, setShowFilters] = useState(false);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const [showMeetingModal,setShowMeetingModal]=useState(false)
     const [activeTab, setActiveTab] = useState("projectlist"); 
-
+       const [hydrated, setHydrated] = useState(false);
   const [inActiveData, setInActiveData] = useState({
     delete_type: "",
     status: "",
@@ -103,9 +103,26 @@ const branchcode=useAuthStore((state)=>state.branchcode)
     { value: 200, label: "100 per page" },
   ];
 
+
+     // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+const token = accesstoken;
+
+  useEffect(() => {
+    if (hydrated && token) {
     fetchProject(token,branchcode);
-  }, [token]);
+  }
+  }, [hydrated,token]);
 
   const getBranch = async (
     page = currentPage,
@@ -142,8 +159,12 @@ const branchcode=useAuthStore((state)=>state.branchcode)
   };
 
   useEffect(() => {
+    if (hydrated && token) {
     getBranch();
+  }
   }, [
+    hydrated,
+    token,
     currentPage,
     searchTerm,
     selectStatus,

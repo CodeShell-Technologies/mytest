@@ -52,7 +52,7 @@ const [selectedRequest, setSelectedRequest] = useState(null);
     notes: "",
   });
 
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const userRole = useAuthStore((state) => state.role);
   const staticBranchCode = "BRANCH-03";
 
@@ -79,6 +79,29 @@ const [selectedRequest, setSelectedRequest] = useState(null);
     { value: 100, label: "100 per page" },
     { value: 200, label: "100 per page" },
   ];
+
+
+  const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+
 
   const getPayRequests = async () => {
     setLoading(true);
@@ -177,8 +200,10 @@ const [selectedRequest, setSelectedRequest] = useState(null);
   };
 
   useEffect(() => {
+    if (hydrated && token) {
     getPayRequests();
-  }, [inv_id]);
+  }
+  }, [hydrated,token,inv_id]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {

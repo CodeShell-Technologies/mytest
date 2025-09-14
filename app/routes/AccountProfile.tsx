@@ -16,12 +16,13 @@ import useBranchStore from "../../src/stores/useBranchStore";
 const AccountProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+    const accesstoken = useAuthStore((state) => state.accessToken);
   const [activeTab, setActiveTab] = useState('personal');
 
   const branchcode = useAuthStore((state) => state.branchcode);
   const staff_id = useAuthStore((state) => state.staff_id);
   console.log(staff_id);
-
+       const [hydrated, setHydrated] = useState(false);
 
   // const employee = {
   //   id: "1",
@@ -45,7 +46,24 @@ const AccountProfile = () => {
 
 const [employee, setEmployee] = useState(null);
 
+
+   // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+  useEffect(() => {
+      if (hydrated && token) {
     const fetchEmployeeData = async () => {
       try {
         const response = await fetch(`${BASE_URL}/users/profile`, {
@@ -94,7 +112,7 @@ const [employee, setEmployee] = useState(null);
     };
 
     fetchEmployeeData();
-  }, []);
+ } }, [hydrated,token]);
 
   if (!employee) {
     return <p>Loading...</p>;

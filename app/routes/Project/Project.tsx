@@ -659,7 +659,7 @@ const Project = () => {
   const [selectedBranchCode, setSelectedBranchCode] = useState("");
   const [pageSize, setPageSize] = useState(8);
   const [showFilters, setShowFilters] = useState(false);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
   const [inActiveData, setInActiveData] = useState({
     delete_type: "",
@@ -671,6 +671,8 @@ const Project = () => {
   const [endDate, setEndDate] = useState(null);
   const [selectedFilterType, setSelectedFilterType] = useState("");
   const [selectedPayStatus, setSelectedPayStatus] = useState("");
+
+         const [hydrated, setHydrated] = useState(false);
 
 
   const UserRole=useAuthStore((state=>state.role))
@@ -736,7 +738,25 @@ const Project = () => {
   ];
 
 
+
+             // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
     useEffect(() => {
+if (hydrated && token) {
+
   fetch(`${BASE_URL}/get-roleaccessdetail/${UserRole}`)
     .then(res => res.json())
     .then(data => {
@@ -744,14 +764,19 @@ const Project = () => {
         setRoleAccess(data.access);
       }
     });
-}, [UserRole]);
+}
+
+}, [hydrated,token,UserRole]);
 
 console.log("RoleAccess:", roleAccess);
 
 
   useEffect(() => {
+if (hydrated && token) {
+
     fetchProject(token, branchcode);
-  }, [token]);
+}
+  }, [hydrated,token]);
 
   const getBranch = async (
     page = currentPage,
@@ -814,8 +839,15 @@ console.log("RoleAccess:", roleAccess);
   };
 
   useEffect(() => {
+    	
+    	if (hydrated && token) {
+
+
     getBranch();
+}
   }, [
+  	hydrated,
+  	token,
     currentPage,
     searchTerm,
     selectStatus,

@@ -36,11 +36,32 @@ const Payslip = () => {
   const payslipRef = React.useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
 
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
   const [salaryDetails, setSalaryDetails] = useState<SalaryDetails | null>(null);
   const [loading, setLoading] = useState(true);
+
+
+
+   const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
 
   // Convert numbers to words
   const numberToWords = (num: number): string => {
@@ -63,6 +84,8 @@ const Payslip = () => {
   };
 
   useEffect(() => {
+
+      if (hydrated && token) {
     const fetchSalary = async () => {
       if (!id) return;
 
@@ -121,7 +144,8 @@ const Payslip = () => {
     };
 
     fetchSalary();
-  }, [id, token]);
+  }
+  }, [hydrated,id, token]);
 
   const handleGoBack = () => navigate(-1);
 

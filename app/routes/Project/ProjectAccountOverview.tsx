@@ -35,11 +35,31 @@ const ProjectAccountOverview = () => {
   const [showMeetingModal, setShowMeetingModal] = useState(false);
 
   const { id } = useParams();
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const [paymentRequests, setPaymentRequests] = useState([]);
 const [loadingPayments, setLoadingPayments] = useState(false);
+       const [hydrated, setHydrated] = useState(false);
+
+
+
+useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
 
   useEffect(() => {
+
+if (hydrated && token) {
+
     const fetchProjectData = async () => {
       try {
         const response = await axios.get(
@@ -58,11 +78,13 @@ const [loadingPayments, setLoadingPayments] = useState(false);
     };
 
     fetchProjectData();
-  }, [id]);
+ } }, [hydrated,token,id]);
 
 
 
 useEffect(() => {
+
+  if (hydrated && token) {
     const fetchPaymentRequests = async () => {
       try {
         const response = await axios.get(
@@ -81,7 +103,8 @@ useEffect(() => {
     };
 
     fetchPaymentRequests();
-  }, [id]);
+  }
+}, [hydrated,token,id]);
 
 
 

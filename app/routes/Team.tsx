@@ -36,7 +36,7 @@ import LeedFeedbackManagement from "./Team/LeedFeedbackManagement";
 function Team() {
   const { id } = useParams();
   const team_id = decodeURIComponent(id);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const [teamData, setTeamData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,6 +45,23 @@ function Team() {
   const navigate = useNavigate();
   const [selectedMember, setSelectedMember] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+         const [hydrated, setHydrated] = useState(false);
+ 
+ // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
   const getTeamProfile = async () => {
     try {
       setLoading(true);
@@ -65,8 +82,10 @@ function Team() {
   };
 
   useEffect(() => {
+    if (hydrated && token) {
     getTeamProfile();
-  }, []);
+  }
+  }, [hydrated,token]);
 
   if (loading) {
     return (

@@ -19,7 +19,7 @@ import LeadClientForm from "../Clients/LeadClientForm";
 
 const LeadConvertion = () => {
   const navigate = useNavigate();
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const branchcode = useAuthStore((state) => state.branchcode);
   const branchCodeOptions = useBranchStore((state) => state.branchCodeOptions);
 
@@ -29,6 +29,25 @@ const LeadConvertion = () => {
   const [selectBranchCode, setSelectBranchCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+
+         const [hydrated, setHydrated] = useState(false);
+
+
+               // wait for Zustand persist to hydrate
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
 
   const [data, setData] = useState({
     overall: { total_leads: 0, converted_leads: 0, conversion_rate: "0.00%" },
@@ -84,8 +103,10 @@ const LeadConvertion = () => {
   };
 
   useEffect(() => {
+    if (hydrated && token) {
     getLeadConversion(selectBranchCode);
-  }, [token, branchcode, selectBranchCode]);
+  }
+  }, [token, hydrated,branchcode, selectBranchCode]);
 
   // ===============================
   //  Table Header and Body

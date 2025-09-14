@@ -22,6 +22,8 @@ import EditMilestoneForm from "../Milestone/EditMilestoneForm";
 import AddNewTaskForm from "./AddNewTask";
 import EditTaskForm from "./EditTaskForm";
 
+// import { useAuthStore } from "src/stores/authStore";
+
 const Task = ({projectData}) => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,9 +46,16 @@ const Task = ({projectData}) => {
   const [pageSize, setPageSize] = useState(8);
   const [showFilters, setShowFilters] = useState(false);
   const [deleteData, setDeleteData] = useState(null);
+const branchcode = useAuthStore((state) => state.branchcode);
 
- const permissions = useAuthStore((state) => state.permissions);
-  const userRole = permissions[0].role;
+  
+
+// Project code safe guard
+const project_code = projectData?.project_code || "";
+
+  // const accesstoken = useAuthStore((state) => state.accessToken);
+ // const permissions = useAuthStore((state) => state.permissions);
+  // const userRole = permissions[0].role;
 
 const [roleAccess, setRoleAccess] = useState(null); // ✅ define here
    const navigate = useNavigate();
@@ -56,13 +65,13 @@ const [roleAccess, setRoleAccess] = useState(null); // ✅ define here
   const [columnFilters, setColumnFilters] = useState({});
 
 
-  const project_code=projectData.project_code;
+  // const project_code=projectData.project_code;
   const [inActiveData, setInActiveData] = useState({
     delete_type: "",
     status: "",
   });
 
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const {
     branches,
     managerOptions,
@@ -86,9 +95,30 @@ const [roleAccess, setRoleAccess] = useState(null); // ✅ define here
     { value: 200, label: "100 per page" },
   ];
 
+    const [hydrated, setHydrated] = useState(false);
+
+      // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+const permissions = useAuthStore((state) => state.permissions) || [];
+const userRole = permissions.length > 0 ? permissions[0].role : null;
+  useEffect(() => {
+    if (hydrated && token) {
     fetchBranches(token);
-  }, [token]);
+  }
+  }, [hydrated,token]);
 
   // const getBranch = async (
   //   page = currentPage,
@@ -128,6 +158,9 @@ const [roleAccess, setRoleAccess] = useState(null); // ✅ define here
 
 
     useEffect(() => {
+ 
+ if (hydrated && token) {
+
   fetch(`${BASE_URL}/get-roleaccessdetail/${userRole}`)
     .then(res => res.json())
     .then(data => {
@@ -135,7 +168,8 @@ const [roleAccess, setRoleAccess] = useState(null); // ✅ define here
         setRoleAccess(data.access);
       }
     });
-}, [userRole]);
+}
+}, [hydrated,token,userRole]);
 
 console.log("RoleAccess:", roleAccess);
 
@@ -184,8 +218,13 @@ const getBranch = async (
   }
 };
   useEffect(() => {
+    if (hydrated && token && project_code) {
     getBranch();
+  }
   }, [
+    hydrated,
+    token,
+    branchcode,
     currentPage,
     searchTerm,
     selectStatus,

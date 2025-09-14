@@ -49,12 +49,12 @@ const AttendanceLogList = () => {
   const [todayAttendance, setTodayAttendance] = useState(null);
   const [isCheckingIn, setIsCheckingIn] = useState(true);
 
-  const token = useAuthStore((state) => state.accessToken);
-  const permission = useAuthStore((state) => state.permissions);
+  const accesstoken = useAuthStore((state) => state.accessToken);
+  // const permission = useAuthStore((state) => state.permissions);
   const staff_id = useAuthStore((state) => state.staff_id);
   const userBranchCode = useAuthStore((state) => state.branchcode);
   const [showEditModal, setShowEditModal] = useState(false);
-  const role = permission[0]?.role || "employee";
+  // const role = permission[0]?.role || "employee";
   const [selectedLog, setSelectedLog] = useState(null);
   const {
     branchCodeOptions,
@@ -88,25 +88,57 @@ const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({}
     return [];
   };
 
+  const [hydrated, setHydrated] = useState(false);
+
+
+
+             // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+ const permission = useAuthStore((state) => state.permissions);
+// const role = permission[0]?.role || "employee";
+const role = useMemo(() => {
+  if (!hydrated || !permission || permission.length === 0) return null;
+  return permission[0]?.role || "employee";
+}, [hydrated, permission]);
+  useEffect(() => {
+    if (hydrated && token && role) {
     if (role === "superadmin" || role === "hr") {
       fetchBranches(token);
     }
-  }, [token, role]);
+  }
+  }, [hydrated,token, role]);
 
   useEffect(() => {
+    if (hydrated && token&& role) {
     if (role === "hr") {
       setSelectedBranchCode(userBranchCode);
     }
-  }, [role, userBranchCode]);
+  }
+  }, [hydrated,token,role, userBranchCode]);
 
   useEffect(() => {
+    if (hydrated && token && role) {
     if (role !== "hr" && role !== "superadmin") {
       setSelectedStaffId(staff_id);
     }
-  }, [role, staff_id]);
+  }
+  }, [hydrated,token,role, staff_id]);
 
   useEffect(() => {
+    if (hydrated && token&& role) {
     const getStaffOptions = async () => {
       if (
         (role === "superadmin" && !selectedBranchCode) ||
@@ -142,7 +174,8 @@ const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({}
     if (role === "superadmin" || role === "hr") {
       getStaffOptions();
     }
-  }, [selectedBranchCode, token, role, userBranchCode]);
+  }
+  }, [hydrated,selectedBranchCode, token, role, userBranchCode]);
 
   const checkTodayAttendance = async () => {
     if (role === "superadmin" || role === "hr") return;
@@ -334,11 +367,15 @@ const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({}
   };
 
   useEffect(() => {
+    if (hydrated && token&& role) {
     fetchAttendanceLogs();
     if (role !== "superadmin" && role !== "hr") {
       checkTodayAttendance();
     }
+  }
   }, [
+    hydrated,
+    token,
     currentPage,
     pageSize,
     selectedStaffId,

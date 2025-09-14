@@ -34,8 +34,28 @@ const ProjectOverview = () => {
   const [showMeetingModal, setShowMeetingModal] = useState(false);
 
   const { id } = useParams();
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
+  
+       const [hydrated, setHydrated] = useState(false);
+
+             // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+  useEffect(() => {
+if (hydrated && token) {
     const fetchProjectData = async () => {
       try {
         const response = await axios.get(
@@ -54,7 +74,8 @@ const ProjectOverview = () => {
     };
 
     fetchProjectData();
-  }, [id]);
+  }
+  }, [hydrated,token,id]);
 
   // Tab configuration
   const tabs = [

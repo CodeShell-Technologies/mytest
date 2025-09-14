@@ -63,7 +63,7 @@ const MilestoneTaskList = () => {
 
  const [hydrated, setHydrated] = useState(false);
  
-const token = useAuthStore((state) => state.accessToken);
+const accesstoken = useAuthStore((state) => state.accessToken);
     const userRole = useAuthStore((state) => state.role);
   // wait for Zustand persist to hydrate
   useEffect(() => {
@@ -78,6 +78,7 @@ const token = useAuthStore((state) => state.accessToken);
   }, []);
 
 
+const token = accesstoken;
 
   const navigate = useNavigate();
   const { id } = useParams();
@@ -115,9 +116,13 @@ const token = useAuthStore((state) => state.accessToken);
   ];
 
   useEffect(() => {
+    if (hydrated && token) {
     fetchBranches(token);
-  }, [token]);
+  }
+  }, [hydrated,token]);
   useEffect(() => {
+if (hydrated && token) {
+
     const fetchMilestoneData = async () => {
       try {
         const response = await axios.get(
@@ -138,7 +143,8 @@ const token = useAuthStore((state) => state.accessToken);
     if (id) {
       fetchMilestoneData();
     }
-  }, [id, token]);
+  }
+  }, [hydrated,id, token]);
 
 
   const getPayments = async (
@@ -217,8 +223,12 @@ const token = useAuthStore((state) => state.accessToken);
 
   useEffect(() => {
     // getBranch();
+    if (hydrated && token) {
     getPayments();
+  }
   }, [
+    hydrated,
+    token,
     currentPage,
     searchTerm,
     selectStatus,

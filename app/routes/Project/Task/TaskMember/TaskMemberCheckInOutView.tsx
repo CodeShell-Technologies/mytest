@@ -36,10 +36,12 @@ const TaskMemberViewPage = () => {
   const [delayBy, setDelayBy] = useState("member");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItem, setTotalItem] = useState(0);
-  const token = useAuthStore((state) => state.accessToken);
+  const accesstoken = useAuthStore((state) => state.accessToken);
   const { id } = useParams();
   const navigate = useNavigate();
   const [showMeetingModal, setShowMeetingModal] = useState(false);
+  
+ const [hydrated, setHydrated] = useState(false);
   // Fetch member data
   const fetchMemberData = async () => {
     try {
@@ -77,9 +79,30 @@ const TaskMemberViewPage = () => {
     }
   };
 
+
+
+            // wait for Zustand persist to hydrate
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => setHydrated(true));
+        return () => unsub();
+      }
+    }
+  }, []);
+
+
+const token = accesstoken;
+
+
+
+  useEffect(() => {
+    if (hydrated && token) {
     fetchMemberData();
-  }, [id]);
+  }
+  }, [hydrated,token,id]);
 
   // Handle check in/out
   const handleCheckInOut = async (isCheckIn) => {
