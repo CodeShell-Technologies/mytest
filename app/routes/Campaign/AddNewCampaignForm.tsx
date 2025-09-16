@@ -9,7 +9,7 @@ import {
   BookOpenText,
   Medal,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { AiFillProject } from "react-icons/ai";
 import { ButtonLoader } from "src/component/Loaders/ButtonLoader";
@@ -47,9 +47,29 @@ const branchCodeOption = userRole === "superadmin" ? branchCode : [{ value: bran
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const campaignData = {
-      data: [formData],
-    };
+    // const campaignData = {
+    //   data: [formData],
+    // };
+
+         const campaignData = {
+  data: [
+    {
+      branchcode: formData.branchcode,
+      campaignname: formData.campaignname,
+    
+      campaigntype:
+        formData.campaigntype === "other" ? formData.customType : formData.campaigntype,
+      startdate: formData.startdate,
+      enddate: formData.enddate,
+      status: formData.status,
+      goallead: formData.goallead,
+      summary: formData.summary,
+    },
+  ],
+};
+
+
+
     console.log("formdataa", campaignData);
     try {
       const response = await axios.post(
@@ -82,6 +102,41 @@ const branchCodeOption = userRole === "superadmin" ? branchCode : [{ value: bran
       setLoading(false);
     }
   };
+
+
+   const [campaigntypes, setCampaigntypes] = useState<string[]>([]);
+
+useEffect(() => {
+  const fetchCamTypes = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/getcamptype`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // only if required
+        },
+      });
+      const json = await res.json();
+
+      if (json?.camp_types) {
+        // directly set since backend already returns unique list
+        setCampaigntypes(json.camp_types);
+        
+      } else {
+        setCampaigntypes([]);
+        
+      }
+    } catch (error) {
+      console.error("Failed to load comm types:", error);
+    }
+  };
+
+  fetchCamTypes();
+}, [token]);
+
+
+
+
+
+
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
       <Toaster position={toastposition} />
@@ -127,7 +182,7 @@ const branchCodeOption = userRole === "superadmin" ? branchCode : [{ value: bran
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Tag className="inline mr-1" size={14} /> Campaign Type
             </p>
-            <select
+            {/*<select
               className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
               name="campaigntype"
               value={formData.campaigntype}
@@ -140,6 +195,52 @@ const branchCodeOption = userRole === "superadmin" ? branchCode : [{ value: bran
               <option value="event">Event</option>
               <option value="social">Social Media</option>
             </select>
+*/}
+
+
+
+                                      <select
+    name="campaigntype"
+    value={formData.campaigntype}
+    onChange={(e) => {
+      const value = e.target.value;
+      if (value === "other") {
+        setFormData((prev) => ({ ...prev, campaigntype: "other", customType: "" }));
+      } else {
+        setFormData((prev) => ({ ...prev, campaigntype: value, customType: "" }));
+      }
+    }}
+    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    required
+  >
+    <option value="">Select type</option>
+    {campaigntypes.map((t) => (
+      <option key={t} value={t}>
+        {t}
+      </option>
+    ))}
+    <option value="other">Other</option>
+  </select>
+
+  {/* Show custom input if "Other" selected */}
+  {formData.campaigntype === "other" && (
+    <input
+      type="text"
+      name="customType"
+      value={formData.customType || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, customType: e.target.value }))
+      }
+      className="mt-2 w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+      placeholder="Enter new type"
+      required
+    />
+  )}
+
+
+
+
+
           </div>
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">

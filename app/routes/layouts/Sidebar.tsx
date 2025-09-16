@@ -389,7 +389,7 @@ const dashlinks = [{
         { label: "Employee", icon: UserLock, path: "/employee" },
         { label: "Leave", icon: CalendarX2, path: "/leave" },
         { label: "Employee Report", icon: Contact, path: "/employee_report" },
-        { label: "Attandance", icon: CalendarCheck, path: "/attandance" },
+        { label: "Attendance", icon: CalendarCheck, path: "/attandance" },
       ],
     },
     // {

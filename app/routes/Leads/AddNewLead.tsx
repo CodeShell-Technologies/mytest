@@ -134,9 +134,21 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
     e.preventDefault();
     setLoading(true);
 
-    const leadData = {
-      data: [formData],
-    };
+    // const leadData = {
+    //   data: [formData],
+    // };
+
+     const leadData = {
+    data: [
+      {
+        ...formData,
+        comm_type:
+          formData.comm_type === "other" ? formData.customType : formData.comm_type,
+          proj_type:
+            formData.proj_type === "other" ? formData.customTypep : formData.proj_type,
+      },
+    ],
+  };
 
     try {
       const response = await axios.post(
@@ -286,6 +298,76 @@ useEffect(() => {
   fetchStaff();
 }, [formData.department]);
 
+        const [types, setTypes] = useState<string[]>([]);
+                const [commtypes, setCommtypes] = useState<string[]>([]);
+
+//  useEffect(() => {
+//   const fetchTypes = async () => {
+//     try {
+//       const res = await fetch(`${BASE_URL}/project/overview/dropdown/type`, {
+//         headers: {
+//           Authorization: `Bearer ${token}`, // optional if API requires auth
+//         },
+//       });
+//       const json = await res.json();
+
+//       if (json?.data) {
+//         // Extract unique types
+//         const extracted = Array.from(
+//           new Set(json.data.map((item: any) => item.type))
+//         );
+//         setTypes(extracted);
+//       } else {
+//         setTypes([]);
+//       }
+//     } catch (error) {
+//       console.error("Failed to load property types:", error);
+//     }
+//   };
+
+//   fetchTypes();
+// }, [token]);
+
+
+
+useEffect(() => {
+  const fetchCommTypes = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/getcommtype`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // only if required
+        },
+      });
+      const json = await res.json();
+
+      if (json?.comm_types) {
+        // directly set since backend already returns unique list
+        setCommtypes(json.comm_types);
+        setTypes(json.proj_types);
+      } else {
+        setCommtypes([]);
+        setTypes([]);
+      }
+    } catch (error) {
+      console.error("Failed to load comm types:", error);
+    }
+  };
+
+  fetchCommTypes();
+}, [token]);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         const loadBranches = (inputValue: string, callback: (options: Option[]) => void) => {
     const filtered = branchCodeOption.filter((c) =>
@@ -315,6 +397,12 @@ useEffect(() => {
     );
     callback(filtered);
   };
+
+
+
+
+
+
 
 
   return (
@@ -626,7 +714,7 @@ useEffect(() => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Tag className="inline mr-1" size={14} /> Communication Type 
             </p>
-            <select
+{/*            <select
               name="comm_type"
               value={formData.comm_type}
               onChange={handleChange}
@@ -639,14 +727,55 @@ useEffect(() => {
               <option value="sms">SMS</option>
               <option value="whatsapp">WhatsApp</option>
               <option value="in-person">In-Person</option>
-            </select>
+            </select>*/}
+
+
+                          <select
+    name="comm_type"
+    value={formData.comm_type}
+    onChange={(e) => {
+      const value = e.target.value;
+      if (value === "other") {
+        setFormData((prev) => ({ ...prev, comm_type: "other", customType: "" }));
+      } else {
+        setFormData((prev) => ({ ...prev, comm_type: value, customType: "" }));
+      }
+    }}
+    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    required
+  >
+    <option value="">Select type</option>
+    {commtypes.map((t) => (
+      <option key={t} value={t}>
+        {t}
+      </option>
+    ))}
+    <option value="other">Other</option>
+  </select>
+
+  {/* Show custom input if "Other" selected */}
+  {formData.comm_type === "other" && (
+    <input
+      type="text"
+      name="customType"
+      value={formData.customType || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, customType: e.target.value }))
+      }
+      className="mt-2 w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+      placeholder="Enter new type"
+      required
+    />
+  )}
+
+
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Tag className="inline mr-1" size={14} /> Project Type
             </p>
-            <select
+    {/*        <select
               name="proj_type"
               value={formData.proj_type}
               onChange={handleChange}
@@ -658,7 +787,47 @@ useEffect(() => {
               <option value="commercial">Commercial</option>
               <option value="industrial">Industrial</option>
               <option value="land">Land</option>
-            </select>
+            </select>*/}
+
+
+               <select
+    name="proj_type"
+    value={formData.proj_type}
+    onChange={(e) => {
+      const value = e.target.value;
+      if (value === "other") {
+        setFormData((prev) => ({ ...prev, proj_type: "other", customTypep: "" }));
+      } else {
+        setFormData((prev) => ({ ...prev, proj_type: value, customTypep: "" }));
+      }
+    }}
+    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    required
+  >
+    <option value="">Select type</option>
+    {types.map((t) => (
+      <option key={t} value={t}>
+        {t}
+      </option>
+    ))}
+    <option value="other">Other</option>
+  </select>
+
+  {/* Show custom input if "Other" selected */}
+  {formData.proj_type === "other" && (
+    <input
+      type="text"
+      name="customTypep"
+      value={formData.customTypep || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, customTypep: e.target.value }))
+      }
+      className="mt-2 w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+      placeholder="Enter new type"
+      required
+    />
+  )}
+
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
