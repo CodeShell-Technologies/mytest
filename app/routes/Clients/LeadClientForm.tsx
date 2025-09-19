@@ -19,6 +19,9 @@ import {
 import useBranchStore from "src/stores/useBranchStore";
 import useLeadsStore from "src/stores/LeadsStore";
 
+
+import AsyncSelect from "react-select/async";
+
 const LeadClientForm = ({ lead, onSuccess, onCancel }) => {
   console.log("leadclientt", lead);
   const [loading, setLoading] = useState(false);
@@ -218,8 +221,15 @@ const LeadClientForm = ({ lead, onSuccess, onCancel }) => {
           office_address: formData.office_address,
           website: formData.website,
           contacts: formData.contacts,
-          industry_type: formData.industry_type,
-          comm_type: formData.comm_type,
+          // industry_type: formData.industry_type,
+          // comm_type: formData.comm_type,
+
+                     comm_type:
+          formData.comm_type === "other" ? formData.customType : formData.comm_type,
+          // industry_type:
+          //   formData.industry_type === "other" ? formData.customTypepi : formData.industry_type,
+          industry_type:
+  formData.industry_type === "other" ? formData.customTypei : formData.industry_type,
           status: formData.status,
         },
       ],
@@ -256,6 +266,50 @@ const LeadClientForm = ({ lead, onSuccess, onCancel }) => {
       setLoading(false);
     }
   };
+
+
+
+
+            const [commtypes, setCommtypes] = useState<string[]>([]);
+                const [indtypes, setIndtypes] = useState<string[]>([]);
+
+
+useEffect(() => {
+  const fetchCommTypes = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/getindtype`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // only if required
+        },
+      });
+      const json = await res.json();
+
+      if (json?.comm_types) {
+        // directly set since backend already returns unique list
+        setCommtypes(json.comm_types);
+        setIndtypes(json.ind_types);
+      } else {
+        setCommtypes([]);
+        setIndtypes([]);
+      }
+    } catch (error) {
+      console.error("Failed to load comm types:", error);
+    }
+  };
+
+  fetchCommTypes();
+}, [token]);
+
+
+
+
+
+
+
+
+
+
+
 
   return (
     <div className="flex flex-col gap-6 dark:bg-gray-800 bg-white p-6 rounded-lg">
@@ -350,7 +404,7 @@ const LeadClientForm = ({ lead, onSuccess, onCancel }) => {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <ClipboardList className="inline mr-1" size={14} /> Industry Type
             </p>
-            <select
+            {/*<select
               name="industry_type"
               value={formData.industry_type}
               onChange={handleChange}
@@ -362,7 +416,50 @@ const LeadClientForm = ({ lead, onSuccess, onCancel }) => {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+
+                                      <select
+    name="industry_type"
+    value={formData.industry_type}
+    onChange={(e) => {
+      const value = e.target.value;
+      if (value === "other") {
+        setFormData((prev) => ({ ...prev, industry_type: "other", customTypei: "" }));
+      } else {
+        setFormData((prev) => ({ ...prev, industry_type: value, customTypei: "" }));
+      }
+    }}
+    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    required
+  >
+    <option value="">Select type</option>
+    {indtypes.map((t) => (
+      <option key={t} value={t}>
+        {t}
+      </option>
+    ))}
+    <option value="other">Other</option>
+  </select>
+
+  {/* Show custom input if "Other" selected */}
+  {formData.industry_type === "other" && (
+    <input
+      type="text"
+      name="customTypei"
+      value={formData.customTypei || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, customTypei: e.target.value }))
+      }
+      className="mt-2 w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+      placeholder="Enter new type"
+  
+    />
+  )}
+
+
+
+
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
@@ -514,7 +611,7 @@ const LeadClientForm = ({ lead, onSuccess, onCancel }) => {
               <ClipboardList className="inline mr-1" size={14} /> Communication
               Type
             </p>
-            <select
+            {/*<select
               name="comm_type"
               value={formData.comm_type}
               onChange={handleChange}
@@ -526,7 +623,50 @@ const LeadClientForm = ({ lead, onSuccess, onCancel }) => {
                   {option.label}
                 </option>
               ))}
-            </select>
+            </select>*/}
+
+                                              <select
+    name="comm_type"
+    value={formData.comm_type}
+    onChange={(e) => {
+      const value = e.target.value;
+      if (value === "other") {
+        setFormData((prev) => ({ ...prev, comm_type: "other", customType: "" }));
+      } else {
+        setFormData((prev) => ({ ...prev, comm_type: value, customType: "" }));
+      }
+    }}
+    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    required
+  >
+    <option value="">Select type</option>
+    {commtypes.map((t) => (
+      <option key={t} value={t}>
+        {t}
+      </option>
+    ))}
+    <option value="other">Other</option>
+  </select>
+
+  {/* Show custom input if "Other" selected */}
+  {formData.comm_type === "other" && (
+    <input
+      type="text"
+      name="customType"
+      value={formData.customType || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, customType: e.target.value }))
+      }
+      className="mt-2 w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+      placeholder="Enter new type"
+      required
+    />
+  )}
+
+
+
+
+
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
