@@ -255,7 +255,7 @@ const token = accesstoken;
                   </div>
                 </div>
 
-                <div className="bg-red-100 dark:bg-gray-700 p-4 rounded-lg w-full md:w-auto">
+{/*                <div className="bg-red-100 dark:bg-gray-700 p-4 rounded-lg w-full md:w-auto">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
                       <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -274,7 +274,7 @@ const token = accesstoken;
                       </p>
                     </div>
                   </div>
-                </div>
+                </div>*/}
               </div>
             </div>
           </div>

@@ -68,9 +68,17 @@ const CreateTeamMembersForm = ({ onSuccess, onCancel, team }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const teamMemberData = {
-      userDatas: [formData],
-    };
+    // const teamMemberData = {
+    //   userDatas: [formData],
+    // };
+
+     // remove department from formData
+  const { department, ...filteredFormData } = formData;
+
+  const teamMemberData = {
+    userDatas: [filteredFormData],
+  };
+
     
     try {
       const response = await axios.post(
