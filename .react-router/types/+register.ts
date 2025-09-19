@@ -29,6 +29,7 @@ type Params = {
   "/reportAnaysis": {};
   "/attandance": {};
   "/project": {};
+  "/revisedproject": {};
   "/project/:id": {
     "id": string;
   };

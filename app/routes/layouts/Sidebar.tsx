@@ -409,16 +409,16 @@ const dashlinks = [{
     //   title: "User Logs",
     //   links: [{ label: "Active Logs", icon: FileClock, path: "/active_log" }],
     // },
-    // {
-    //   title: "Report Section",
-    //   links: [
-    //     {
-    //       label: "Report & Management",
-    //       icon: MessageCircleWarning,
-    //       path: "/reportAnaysis",
-    //     },
-    //   ],
-    // },
+    {
+      title: "Report Section",
+      links: [
+        {
+          label: "Report & Management",
+          icon: MessageCircleWarning,
+          path: "/reportAnaysis",
+        },
+      ],
+    },
   ];
 
   const finalLinks =

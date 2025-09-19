@@ -128,7 +128,9 @@ useEffect(() => {
       });
       console.log("campaigndataaa", response);
       setSheetData(response?.data?.data);
-      setTotalItem(response?.data?.length || 0);
+      // setTotalItem(response?.data?.length || 0);
+      setTotalItem(response?.data?.totalDocuments || 0);
+
       setData(response?.data?.data || []);
     } catch (error) {
       console.error("Error fetching branch list", error);
@@ -313,7 +315,9 @@ const handleUpload = async () => {
     return data.map((branch, index) => ({
       id: branch.id,
       data: [
-        { data: index + 1 },
+        // { data: index + 1 },
+        { data: (currentPage - 1) * pageSize + index + 1 },
+
         { data: branch.campaign_code },
         { data: branch.branchcode },
         { data: branch.campaignname },

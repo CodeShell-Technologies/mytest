@@ -17,6 +17,7 @@ import UserRoles from "../settings/UserRoles";
 import Milestone from "./Milestone/Milestone";
 import Task from "./Task/Task";
 import ProjectFiles from "./ProjectFiles";
+import RevisedProject from "./revised_projects";
 import ProjectTimesheet from "./ProjectDocuments/ProjectTimesheet";
 import { useParams } from "react-router";
 import { BASE_URL, toastposition } from "~/constants/api";
@@ -83,6 +84,7 @@ if (hydrated && token) {
     { id: "milestone", label: "Milestones" },
     { id: "task", label: "Tasks" },
     { id: "files", label: "Files" },
+    { id: "revisions", label: "Revisions" },
     { id: "timesheet", label: "TimeSheet" },
   ];
 
@@ -434,6 +436,13 @@ if (hydrated && token) {
         {activeTab === "task" && (
           <div>
             <Task projectData={Project} />
+          </div>
+        )}
+
+
+                {activeTab === "revisions" && (
+          <div>
+            <RevisedProject projectData={Project} />
           </div>
         )}
 

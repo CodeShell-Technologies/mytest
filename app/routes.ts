@@ -173,6 +173,7 @@ export default [
       route("/reportAnaysis", "routes/Report.tsx"),
       route("/attandance", "routes/Attendance/Attandance.tsx"),
       route("/project", "routes/Project/Project.tsx"),
+      route("/revisedproject", "routes/Project/revised_projects.tsx"),
       route("/project/:id", "routes/Project/ProjectOverview.tsx"),
       route("/projectaccount/:id", "routes/Project/ProjectAccountOverview.tsx"),
       route("/milestone/:id", "routes/Project/Task/MilestoneTaskList.tsx"),
