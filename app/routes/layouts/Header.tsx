@@ -20,6 +20,7 @@ export const Header = () => {
   const clearAuthData = useAuthStore((state) => state.clearAuthData);
   const UserRole=useAuthStore((state=>state.role))
   const [count, setCount] = useState(0);
+  const [leaves, setLeaves] = useState(0);
   const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
 
   const token = useAuthStore((state: any) => state.accessToken);
@@ -80,6 +81,69 @@ export const Header = () => {
   fetchCounts();
 }, [today, token]);
 
+ // let url = `${BASE_URL}/users/leavereq/read`;
+
+//   useEffect(() => {
+//   const fetchLeaves = async () => {
+//     try {
+//       const headersl = {
+//         Authorization: `Bearer ${token}`,
+//       };
+
+//       const [leaves] = await Promise.all([
+//         axios.get(
+//           `${BASE_URL}/users/leavereq/read?status=pending`,
+//           { headersl }
+//         ),
+        
+//       ]);
+
+//       console.log("Leaves API:", leaves.data);
+//       // console.log("Tasks API:", tasks.data);
+//       // console.log("Milestones API:", milestones.data);
+
+//       const leaveCount =
+//         leaves.data.totalDocuments ?? leaves.data.total ?? 0;
+      
+
+//       const totalleaves = leaveCount;
+//       setLeaves(totalleaves);
+//     } catch (error) {
+//       console.error("Failed to fetch reminder counts", error);
+//     }
+//   };
+
+//   fetchLeaves();
+// }, [today, token]);
+
+
+
+useEffect(() => {
+  const fetchLeaves = async () => {
+    try {
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+
+      const [leaves] = await Promise.all([
+        axios.get(`${BASE_URL}/users/leavereq/read?status=pending`, { headers }),
+      ]);
+
+      console.log("Leaves API:", leaves.data);
+
+      const leaveCount =
+        leaves.data.totalDocuments ?? leaves.data.total ?? 0;
+
+      setLeaves(leaveCount);
+    } catch (error) {
+      console.error("Failed to fetch reminder counts", error);
+    }
+  };
+
+  fetchLeaves();
+}, [today, token]);
+
+
 useEffect(() => {
   const fetchCounts = async () => { /* ...same as above... */ };
   fetchCounts();
@@ -119,7 +183,22 @@ useEffect(() => {
         </button>
       </div>
 
+
+
       <div className="flex items-center gap-x-6">
+              <div
+  onClick={() => navigate("/leave")}
+  className="relative inline-flex items-center cursor-pointer text-gray-600 hover:text-red-700 dark:text-gray-400 dark:hover:text-red-500"
+>
+  <span className="font-medium">Leaves</span>
+  {leaves > 0 && (
+    <span className="ml-2 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">
+      {leaves}
+    </span>
+  )}
+</div>
+
+
         <div className="relative inline-block">
       <Bell  onClick={() => navigate("/notification")} className="text-gray-600 hover:text-red-700 dark:text-gray-400 dark:hover:text-red-500 cursor-pointer" size={28} />
       {count > 0 && (
@@ -128,6 +207,17 @@ useEffect(() => {
         </span>
       )}
     </div>
+{/*
+    <div className="relative inline-block">
+      <Bell  onClick={() => navigate("/notification")} className="text-gray-600 hover:text-red-700 dark:text-gray-400 dark:hover:text-red-500 cursor-pointer" size={28} />
+      {leaves > 0 && (
+        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">
+          {leaves}
+        </span>
+      )}
+    </div>*/}
+
+
 
         <div className="relative" ref={dropdownRef}>
           <div 

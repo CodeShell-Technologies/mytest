@@ -211,7 +211,7 @@ if (hydrated && token) {
       if (priority) url += `&priority=${priority}`;
       if (branchCode) url += `&branchcode=${encodeURIComponent(branchCode)}`;
       if (sort) url += `&dec=${sort}`;
-      if (filterStartDate) url += `&start_date=${formatDate(filterStartDate)}`;
+      if (filterStartDate) url += `&created_on=${formatDate(filterStartDate)}`;
       if (filterEndDate) url += `&end_date=${formatDate(filterEndDate)}`;
       if (filterType) url += `&filter_type=${filterType}`;
       if (payStatus) url += `&paystatus=${payStatus}`;

@@ -314,27 +314,57 @@ const MyCalendar = () => {
         ];
 
         // ---------- Apply Role / Staff Filtering ----------
-        if (!["superadmin", "admin", "hr"].includes(role)) {
-          allEvents = allEvents.filter((event) => {
-            if (event.type === "meeting") {
-              return (
-                event.creator_id === staff_id ||
-                (event.participants && event.participants.includes(staff_id))
-              );
-            }
-            if (event.type === "followup") {
-              return event.related_staff === staff_id;
-            }
-            if (
-              ["overdue_project", "overdue_milestone", "overdue_task"].includes(
-                event.type
-              )
-            ) {
-              return event.handler_by === staff_id;
-            }
-            return false;
-          });
-        }
+        // if (!["superadmin", "admin", "hr"].includes(role)) {
+        //   allEvents = allEvents.filter((event) => {
+        //     if (event.type === "meeting") {
+        //       return (
+        //         event.creator_id === staff_id ||
+        //         (event.participants && event.participants.includes(staff_id))
+        //       );
+        //     }
+        //     if (event.type === "followup") {
+        //       return event.related_staff === staff_id;
+        //     }
+        //     if (
+        //       ["overdue_project", "overdue_milestone", "overdue_task"].includes(
+        //         event.type
+        //       )
+        //     ) {
+        //       return event.handler_by === staff_id;
+        //     }
+        //     return false;
+        //   });
+        // }
+
+// ---------- Apply Role / Staff Filtering ----------
+if (!["superadmin", "admin", "hr"].includes(role)) {
+  allEvents = allEvents.filter((event) => {
+    if (event.type === "meeting") {
+      // ✅ Check if current staff is creator or a participant
+      return (
+        event.creator_id === staff_id ||
+        (event.participants &&
+          event.participants.some(
+            (p: any) => p.person_id === staff_id || p.team_id === staff_id
+          ))
+      );
+    }
+
+    if (event.type === "followup") {
+      return event.related_staff === staff_id;
+    }
+
+    if (
+      ["overdue_project", "overdue_milestone", "overdue_task"].includes(
+        event.type
+      )
+    ) {
+      return event.handler_by === staff_id;
+    }
+
+    return false;
+  });
+}
 
         setEvents(allEvents);
       } catch (err) {
