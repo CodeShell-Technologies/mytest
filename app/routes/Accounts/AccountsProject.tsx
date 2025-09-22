@@ -324,7 +324,7 @@ const token = accesstoken;
         {
           data: (
             <div className="flex  justify-center gap-2">
-              <Link to={`/projectaccount/${project.project_code}`}>
+              <Link to={`/projectaccount/${encodeURIComponent(project.project_code)}`}>
                 <button className=" px-4 py-2 dark:text-blue-600 text-blue-700 rounded-sm">
                   <Eye className="inline" size={20} />
                 </button>
