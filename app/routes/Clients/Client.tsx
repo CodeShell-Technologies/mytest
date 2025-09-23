@@ -445,8 +445,11 @@ const tbody = () => {
           { data: client.client_name },
           { data: client.company_name },
           { data: client.primary_phone },
-          { data: client.contacts.map((c) => c.designation).join(", ") },
-          { data: client.contacts.map((c) => c.phone).join(", ") },
+          // { data: client.contacts.map((c) => c.designation).join(", ") },
+          // { data: client.contacts.map((c) => c.phone).join(", ") },
+          { data: Array.isArray(client.contacts) ? client.contacts.map((c) => c.designation).join(", ") : "" },
+{ data: Array.isArray(client.contacts) ? client.contacts.map((c) => c.phone).join(", ") : "" },
+
           {
             data: (
               <div

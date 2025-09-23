@@ -173,28 +173,53 @@ useEffect(() => {
   // };
 
 
+// const handleLogout = async () => {
+//   try {
+//     const userId = useAuthStore.getState().userId;
+
+//     // 1️⃣ Call backend to clear server session
+//     await axios.post(`${BASE_URL}/logout`, { userId });
+
+//     // 2️⃣ Clear frontend Zustand & storage
+//     useAuthStore.getState().clearAuthData();
+//     localStorage.removeItem("auth-storage");
+//     localStorage.removeItem("accessToken");
+//     localStorage.removeItem("refreshToken");
+//     localStorage.removeItem("userId");
+//     localStorage.removeItem("role");
+//     localStorage.removeItem("brcode");
+
+//     // 3️⃣ Navigate to login page
+//     navigate("/login");
+//   } catch (err) {
+//     console.error("Logout failed", err);
+//     // Fallback: force reload
+//     window.location.href = "/login";
+//   }
+// };
+
+
 const handleLogout = async () => {
   try {
     const userId = useAuthStore.getState().userId;
 
-    // 1️⃣ Call backend to clear server session
-    await axios.post(`${BASE_URL}/logout`, { userId });
+    // 🔹 Optional: call backend to mark session inactive
+    axios.post(`${BASE_URL}/logout`, { userId }).catch(() => {
+      console.warn("Backend logout failed, but clearing local session anyway.");
+    });
 
-    // 2️⃣ Clear frontend Zustand & storage
+    // 🔹 Clear Zustand (this will also clear persisted storage if you set it up properly)
     useAuthStore.getState().clearAuthData();
-    localStorage.removeItem("auth-storage");
+
+    // 🔹 If you want, only clear tokens (Zustand should handle the rest)
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("role");
-    localStorage.removeItem("brcode");
 
-    // 3️⃣ Navigate to login page
+    // 🔹 Navigate to login
     navigate("/login");
   } catch (err) {
     console.error("Logout failed", err);
-    // Fallback: force reload
-    window.location.href = "/login";
+    window.location.href = "/login"; // fallback
   }
 };
 
