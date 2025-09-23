@@ -153,24 +153,51 @@ useEffect(() => {
 
 
 
-  const handleLogout = () => {
-  //   clearAuthData();
-  //   useAuthStore.persist.clearStorage(); // clear Zustand persist key
-  // useAuthStore.getState().clearAuthData(); // reset Zustand state
-  //   navigate("/login");
-    const clearAuthData = useAuthStore.getState().clearAuthData;
-  clearAuthData(); // clears Zustand state and persisted storage
+  // const handleLogout = () => {
+  // //   clearAuthData();
+  // //   useAuthStore.persist.clearStorage(); // clear Zustand persist key
+  // // useAuthStore.getState().clearAuthData(); // reset Zustand state
+  // //   navigate("/login");
+  //   const clearAuthData = useAuthStore.getState().clearAuthData;
+  // clearAuthData(); // clears Zustand state and persisted storage
 
-  // Extra safety: clear tokens manually
-  localStorage.removeItem("auth-storage"); // Zustand persist key
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("userId");
-  localStorage.removeItem("role");
-  localStorage.removeItem("brcode");
+  // // Extra safety: clear tokens manually
+  // localStorage.removeItem("auth-storage"); // Zustand persist key
+  // localStorage.removeItem("accessToken");
+  // localStorage.removeItem("refreshToken");
+  // localStorage.removeItem("userId");
+  // localStorage.removeItem("role");
+  // localStorage.removeItem("brcode");
 
-  window.location.href = "/login"; // force reload to login page
-  };
+  // window.location.href = "/login"; // force reload to login page
+  // };
+
+
+const handleLogout = async () => {
+  try {
+    const userId = useAuthStore.getState().userId;
+
+    // 1️⃣ Call backend to clear server session
+    await axios.post(`${BASE_URL}/logout`, { userId });
+
+    // 2️⃣ Clear frontend Zustand & storage
+    useAuthStore.getState().clearAuthData();
+    localStorage.removeItem("auth-storage");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("role");
+    localStorage.removeItem("brcode");
+
+    // 3️⃣ Navigate to login page
+    navigate("/login");
+  } catch (err) {
+    console.error("Logout failed", err);
+    // Fallback: force reload
+    window.location.href = "/login";
+  }
+};
+
 
   return (
     <header className="relative z-10 flex h-[60px] items-center justify-between bg-white px-4 shadow-md transition-colors dark:bg-slate-900 dark:shadow-slate-800">
