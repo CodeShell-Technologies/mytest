@@ -332,7 +332,13 @@ const handleUpload = async () => {
         {
           data: (
             <div
-              className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${branch.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+              // className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${branch.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+              className={`px-3 py-1 rounded-full text-sm inline-flex items-center ${
+  branch.status === "active" || branch.status === "completed"
+    ? "bg-green-100 text-green-800"
+    : "bg-red-100 text-red-800"
+}`}
+
             >
               <span
                 className={`w-2 h-2 rounded-full mr-2 ${branch.status === "active" ? "bg-green-800" : "bg-red-700"}`}

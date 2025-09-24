@@ -46,7 +46,7 @@ export const Header = () => {
         Authorization: `Bearer ${token}`,
       };
 
-      const [projects, tasks, milestones, payments] = await Promise.all([
+      const [projects, tasks, milestones, payments,followups] = await Promise.all([
         axios.get(
           `${BASE_URL}/project/overview/read?overdue=${today}`,
           { headers }
@@ -65,12 +65,19 @@ export const Header = () => {
           { headers }
         ),
 
+                            axios.get(
+          `${BASE_URL}/campaign/followup/read`,
+          { headers }
+        ),
+
       ]);
 
+// /campaign/followup/read
       console.log("Projects API:", projects.data);
       console.log("Tasks API:", tasks.data);
       console.log("Milestones API:", milestones.data);
             console.log("Payment API:", payments.data);
+            console.log("Payment API:", followups.data);
 
       const projectCount =
         projects.data.totalDocuments ?? projects.data.total ?? 0;
@@ -82,7 +89,10 @@ export const Header = () => {
         const paymentCount =
         payments.data.totalDocuments ?? payments.data.total ?? 0;
 
-      const total = projectCount + taskCount + milestoneCount+paymentCount;
+                const followupCount =
+        followups.data.totalDocuments ?? followups.data.total ?? 0;
+
+      const total = projectCount + taskCount + milestoneCount+paymentCount+followupCount;
       setCount(total);
     } catch (error) {
       console.error("Failed to fetch reminder counts", error);

@@ -55,7 +55,7 @@ const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({}
 
 
        const [hydrated, setHydrated] = useState(false);
-
+  const [roleAccess, setRoleAccess] = useState(null); // ✅ define here
 
   const {
     branches,
@@ -103,7 +103,7 @@ useEffect(() => {
   }
 }, [hydrated, token]);
 
-
+  const UserRole=useAuthStore((state=>state.role))
   const getClient = async (
     page = currentPage,
     limit = pageSize,
@@ -253,6 +253,24 @@ const processedData = data
     setShowDeleteModal(true);
     setselectedClient(client);
   };
+
+
+    useEffect(() => {
+if (hydrated && token) {
+
+  fetch(`${BASE_URL}/get-roleaccessdetail/${UserRole}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.status) {
+        setRoleAccess(data.access);
+      }
+    });
+}
+
+}, [hydrated,token,UserRole]);
+
+console.log("RoleAccess:", roleAccess);
+
 
   const handleDelete = async () => {
     setLoading(true);
@@ -726,6 +744,9 @@ const handleUpload = async () => {
                 <FileDown className="mr-1" />
                 {!isMobile && "Export PDF"}
               </button>
+           
+
+              {roleAccess?.client?.create && (
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
@@ -733,7 +754,7 @@ const handleUpload = async () => {
                 {!isMobile && "New Client"} +
 
               </button>
-
+)}
 
 
 

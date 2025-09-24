@@ -14,6 +14,7 @@ import React, { useState, useEffect } from "react";
 import MilestoneRemindar from "./Notification/MilestoneRemindar";
 import TaskRemindar from "./Notification/TaskRemindar";
 import PaymentRemaindar from "./Notification/PaymentRemaindar";
+import FollowupRemindar from "./Notification/FollowupRemindar";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
@@ -45,6 +46,7 @@ function Notification() {
     { id: "milestone", label: "Milestone" },
     { id: "task", label: "Task" },
     { id: "payment", label: "Payment" },
+    { id: "followup", label: "Followup" },
   ];
 
   useEffect(() => {
@@ -204,6 +206,7 @@ function Notification() {
       {activeTab === 'milestone' && <MilestoneRemindar />}
       {activeTab === 'task' && <TaskRemindar />}
       {activeTab === 'payment' && <PaymentRemaindar />}
+      {activeTab === 'followup' && <FollowupRemindar />}
     </>
   );
 }
