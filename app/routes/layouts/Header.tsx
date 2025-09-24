@@ -21,6 +21,7 @@ export const Header = () => {
   const UserRole=useAuthStore((state=>state.role))
   const [count, setCount] = useState(0);
   const [leaves, setLeaves] = useState(0);
+
   const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
 
   const token = useAuthStore((state: any) => state.accessToken);
@@ -45,7 +46,7 @@ export const Header = () => {
         Authorization: `Bearer ${token}`,
       };
 
-      const [projects, tasks, milestones] = await Promise.all([
+      const [projects, tasks, milestones, payments] = await Promise.all([
         axios.get(
           `${BASE_URL}/project/overview/read?overdue=${today}`,
           { headers }
@@ -58,11 +59,18 @@ export const Header = () => {
           `${BASE_URL}/project/milestone/read?overdue=${today}`,
           { headers }
         ),
+
+              axios.get(
+          `${BASE_URL}/project/invoice/read?overdue=${today}`,
+          { headers }
+        ),
+
       ]);
 
       console.log("Projects API:", projects.data);
       console.log("Tasks API:", tasks.data);
       console.log("Milestones API:", milestones.data);
+            console.log("Payment API:", payments.data);
 
       const projectCount =
         projects.data.totalDocuments ?? projects.data.total ?? 0;
@@ -71,7 +79,10 @@ export const Header = () => {
       const milestoneCount =
         milestones.data.totalDocuments ?? milestones.data.total ?? 0;
 
-      const total = projectCount + taskCount + milestoneCount;
+        const paymentCount =
+        payments.data.totalDocuments ?? payments.data.total ?? 0;
+
+      const total = projectCount + taskCount + milestoneCount+paymentCount;
       setCount(total);
     } catch (error) {
       console.error("Failed to fetch reminder counts", error);
@@ -238,6 +249,9 @@ const handleLogout = async () => {
 
 
       <div className="flex items-center gap-x-6">
+              
+
+ {(UserRole === "superadmin" || UserRole === "admin" || UserRole === "hr") && (
               <div
   onClick={() => navigate("/leave")}
   className="relative inline-flex items-center cursor-pointer text-gray-600 hover:text-red-700 dark:text-gray-400 dark:hover:text-red-500"
@@ -249,6 +263,7 @@ const handleLogout = async () => {
     </span>
   )}
 </div>
+)}
 
 
         <div className="relative inline-block">

@@ -253,7 +253,7 @@ const handleConvertLead=(branch)=>{
   const thead = () => [
     { data: "id" },
     { data: "Branch Code" },
-    { data: "Lead Code" },
+    // { data: "Lead Code" },
     { data: "Lead Name" },
     { data: "Phone" },
     { data: "Email" },
@@ -274,7 +274,7 @@ const handleConvertLead=(branch)=>{
         { data: branch.id },
         { data: branch.branchcode },
 
-        { data: branch.lead_date },
+        // { data: branch.lead_date },
         { data: branch.lead_name },
         { data: branch.phone },
         { data: branch.email },
