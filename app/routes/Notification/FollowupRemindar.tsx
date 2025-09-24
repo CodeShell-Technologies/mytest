@@ -39,7 +39,7 @@ function FollowupRemindar() {
     setLoading(true);
     setError("");
     try {
-      const response = await axios.get(`${BASE_URL}/campaign/followup/read`, {
+      const response = await axios.get(`${BASE_URL}/campaign/followup/read?status=active`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
