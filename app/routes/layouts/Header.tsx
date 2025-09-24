@@ -66,7 +66,7 @@ export const Header = () => {
         ),
 
                             axios.get(
-          `${BASE_URL}/campaign/followup/read`,
+          `${BASE_URL}/campaign/followup/read?status=active`,
           { headers }
         ),
 
