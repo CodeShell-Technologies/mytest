@@ -202,7 +202,7 @@ function TaskRemindar() {
                 </div>
                 <div className="md:flex justify-between mt-4">
                   <div className="flex gap-8">
-                    <Link to={`/task_view/${task.id}`}>
+                    <Link to={`/task_view/${encodeURIComponent(task.id)}`}>
                       <button
                         className={`${bgColor}/25 px-3 py-2 rounded-sm ${textColor} ${hoverBgColor} ${hoverTextColor} flex gap-1`}
                       >

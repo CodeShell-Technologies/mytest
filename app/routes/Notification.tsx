@@ -181,7 +181,7 @@ function Notification() {
                     </div>
                     <div className="md:flex justify-between mt-4">
                       <div className="flex gap-8">
-                        <Link to={`/project/${project.project_code}`}>
+                        <Link to={`/project/${encodeURIComponent(project.project_code)}`}>
                         <button className={`${bgColor}/25 px-3 py-2 rounded-sm ${textColor} ${hoverBgColor} ${hoverTextColor} flex gap-1`}>
                           <Eye size={15} className="mt-1" />
                           View Detail

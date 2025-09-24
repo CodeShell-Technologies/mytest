@@ -164,10 +164,10 @@ function PaymentRemaindar() {
                       View Detail
                     </button>
                   </Link>
-                  <button className="bg-red-700 px-3 py-2 text-gray-100 hover:bg-red-800 flex gap-1 rounded-sm">
+                  {/*<button className="bg-red-700 px-3 py-2 text-gray-100 hover:bg-red-800 flex gap-1 rounded-sm">
                     <DollarSign size={15} className="mt-1" />
                     Record Payment
-                  </button>
+                  </button>*/}
                 </div>
                 <div>
                 </div>

@@ -145,40 +145,90 @@ function Login() {
 
 
 
+// const handleSubmit = async (e: React.FormEvent) => {
+//   e.preventDefault();
+//   setError(null);
+//   setIsLoading(true);
+
+//   try {
+//     const response = await axios.post(`${BASE_URL}/users/login`, formData);
+
+//     if (response?.status === 201) {
+//       const userData = response.data.data[0];
+//       const { accessToken, refreshToken } = response.data.token; // destructure tokens
+
+//       // Set auth state (accessToken is string, safe to render)
+//       setAuthData({
+//         branchcode: userData.branchcode,
+//         staff_id: userData.staff_id,
+//         accessToken: accessToken, // string
+//         isActive: userData.status,
+//         permissions: response.data.roleAccess,
+//         role: userData.role,
+//       });
+
+//       // Store tokens in localStorage for persistence
+//       localStorage.setItem("accessToken", accessToken);
+//       localStorage.setItem("refreshToken", refreshToken);
+//       localStorage.setItem("userId", userData.staff_id);
+//       localStorage.setItem("role", userData.role);
+//       localStorage.setItem("brcode", userData.branchcode);
+
+//       navigate("/"); // redirect to dashboard/home
+//     }
+//   } catch (error: any) {
+//     console.error("Login error:", error?.response?.data?.error);
+//     setError(error?.response?.data?.error || "Login failed. Please try again.");
+//     setIsVibrating(true);
+//   } finally {
+//     setIsLoading(false);
+//   }
+// };
+
+
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setError(null);
   setIsLoading(true);
 
   try {
-    const response = await axios.post(`${BASE_URL}/users/login`, formData);
+    const response = await axios.post(
+      `${BASE_URL}/users/login`,
+      formData,
+      {
+        timeout: 15000, // 15 seconds timeout
+      }
+    );
 
     if (response?.status === 201) {
       const userData = response.data.data[0];
-      const { accessToken, refreshToken } = response.data.token; // destructure tokens
+      const { accessToken, refreshToken } = response.data.token;
 
-      // Set auth state (accessToken is string, safe to render)
       setAuthData({
         branchcode: userData.branchcode,
         staff_id: userData.staff_id,
-        accessToken: accessToken, // string
+        accessToken,
         isActive: userData.status,
         permissions: response.data.roleAccess,
         role: userData.role,
       });
 
-      // Store tokens in localStorage for persistence
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("userId", userData.staff_id);
       localStorage.setItem("role", userData.role);
       localStorage.setItem("brcode", userData.branchcode);
 
-      navigate("/"); // redirect to dashboard/home
+      navigate("/");
     }
   } catch (error: any) {
-    console.error("Login error:", error?.response?.data?.error);
-    setError(error?.response?.data?.error || "Login failed. Please try again.");
+    if (error.code === "ECONNABORTED") {
+      setError("Login request timed out. Please try again.");
+      alert("Login request timed out. Please try again.")
+    } else {
+      setError(error?.response?.data?.error || "Login failed. Please try again.");
+    }
+    console.error("Login error:", error);
     setIsVibrating(true);
   } finally {
     setIsLoading(false);
