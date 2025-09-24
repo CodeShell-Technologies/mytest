@@ -158,7 +158,7 @@ function PaymentRemaindar() {
               </div>
               <div className="md:flex justify-between mt-4">
                 <div className="flex gap-8">
-                  <Link to={`/invoice/${payment.invoice.invoice_id}`}>
+                  <Link to={`/invoice/${encodeURIComponent(payment.invoice.invoice_id) }`}>
                     <button className="bg-red-700/25 px-3 py-2 rounded-sm text-red-700 hover:bg-red-700/50 hover:text-red-800 flex gap-1">
                       <Eye size={15} className="mt-1" />
                       View Detail
