@@ -27,7 +27,7 @@ export const Header = () => {
 
   const token = useAuthStore((state: any) => state.accessToken);
 
-
+  const staff_id = useAuthStore((state: any) => state.staff_id);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -167,6 +167,32 @@ useEffect(() => {
 
 
 
+// useEffect(() => {
+//   const fetchMeetings = async () => {
+//     try {
+//       const headers = {
+//         Authorization: `Bearer ${token}`,
+//       };
+
+//       const [meetings] = await Promise.all([
+//         axios.get(`${BASE_URL}/doc_meet/read?comm_type=meeting&status=active`, { headers }),
+//       ]);
+
+//       console.log("Leaves API:", meetings.data);
+
+//       const meetingCount =
+//         meetings.data.totalDocuments ?? meetings.data.total ?? 0;
+
+//       setMeetings(meetingCount);
+//     } catch (error) {
+//       console.error("Failed to fetch reminder counts", error);
+//     }
+//   };
+
+//   fetchMeetings();
+// }, [today, token]);
+
+
 useEffect(() => {
   const fetchMeetings = async () => {
     try {
@@ -174,14 +200,27 @@ useEffect(() => {
         Authorization: `Bearer ${token}`,
       };
 
-      const [meetings] = await Promise.all([
-        axios.get(`${BASE_URL}/doc_meet/read?comm_type=meeting&status=active`, { headers }),
-      ]);
+      const res = await axios.get(
+        `${BASE_URL}/doc_meet/read?comm_type=meeting&status=active`,
+        { headers }
+      );
 
-      console.log("Leaves API:", meetings.data);
+      console.log("Meetings API:", res.data);
 
-      const meetingCount =
-        meetings.data.totalDocuments ?? meetings.data.total ?? 0;
+      let meetingCount = 0;
+
+      if (UserRole === "admin" || UserRole === "superadmin") {
+        // ✅ Admins/Superadmins see all
+        meetingCount = res.data.totalDocuments ?? res.data.total ?? 0;
+      } else {
+        // ✅ Staff: filter only meetings created by or participated in
+        const meetings = res.data.data ?? [];
+        meetingCount = meetings.filter(
+          (m: any) =>
+            m.createdby === staff_id ||
+            m.participants?.some((p: any) => p.person_id === staff_id)
+        ).length;
+      }
 
       setMeetings(meetingCount);
     } catch (error) {
@@ -190,7 +229,7 @@ useEffect(() => {
   };
 
   fetchMeetings();
-}, [today, token]);
+}, [today, token, UserRole, staff_id]);
 
 
 
