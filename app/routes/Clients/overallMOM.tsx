@@ -314,10 +314,10 @@ export default function ClientMom() {
 
   const token = useAuthStore((state) => state.accessToken);
 
-
+  const staff_id = useAuthStore((state: any) => state.staff_id);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5; // ✅ Show 5 rows per page
-
+const UserRole=useAuthStore((state=>state.role))
 
  const [filters, setFilters] = useState<Record<string, string>>({});
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
@@ -396,50 +396,107 @@ if (sortConfig) {
     return data;
   }, [meetings, filters, sortConfig]);
 
-  useEffect(() => {
-    const fetchMeetings = async () => {
-      try {
-        // const token = localStorage.getItem("authToken"); // 👈 make sure your login saves this
+//   useEffect(() => {
+//     const fetchMeetings = async () => {
+//       try {
+//         // const token = localStorage.getItem("authToken"); // 👈 make sure your login saves this
 
-        const res = await axios.get(
-           `${BASE_URL}/getmeetingdetails?comm_type=meeting`
-,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`, // 👈 add bearer token
-            },
-          }
+//         const res = await axios.get(
+//            `${BASE_URL}/getmeetingdetails?comm_type=meeting`
+// ,
+//           {
+//             headers: {
+//               Authorization: `Bearer ${token}`, // 👈 add bearer token
+//             },
+//           }
+//         );
+
+//         const apiData = res.data.data || [];
+
+//         const transformed: MeetingData[] = apiData.map((item: any) => ({
+//           id: `ASC_${item.meet_id}`,
+//           title: item.title || "No Title",
+//           name: item.notes || "-",
+//           organized_by: item.organizer_firstname || "-",
+//           status: item.status || "-",
+//           // lastdate: new Date(item.end_date_time).toLocaleDateString("en-GB"),
+//           lastdate: item.start_date_time
+//   ? new Date(item.start_date_time).toLocaleDateString("en-GB", {
+//       day: "2-digit",
+//       month: "2-digit",
+//       year: "numeric",
+//     })
+//   : "",
+//         }));
+
+//         setMeetings(transformed);
+//       } catch (err) {
+//         console.error("Error fetching meetings:", err);
+//         setMeetings([]);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchMeetings();
+//   }, []);
+
+
+
+useEffect(() => {
+  const fetchMeetings = async () => {
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/getmeetingdetails?comm_type=meeting`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const apiData = res.data.data || [];
+
+      // 🔑 Apply filtering based on role
+      let filteredData = apiData;
+
+      if (UserRole !== "admin" && UserRole !== "superadmin") {
+        filteredData = apiData.filter(
+          (item: any) =>
+            item.createdby === staff_id ||
+            item.participants?.some((p: any) => p.person_id === staff_id)
         );
-
-        const apiData = res.data.data || [];
-
-        const transformed: MeetingData[] = apiData.map((item: any) => ({
-          id: `ASC_${item.meet_id}`,
-          title: item.title || "No Title",
-          name: item.notes || "-",
-          organized_by: item.organizer_firstname || "-",
-          status: item.status || "-",
-          // lastdate: new Date(item.end_date_time).toLocaleDateString("en-GB"),
-          lastdate: item.start_date_time
-  ? new Date(item.start_date_time).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
-  : "",
-        }));
-
-        setMeetings(transformed);
-      } catch (err) {
-        console.error("Error fetching meetings:", err);
-        setMeetings([]);
-      } finally {
-        setLoading(false);
       }
-    };
 
-    fetchMeetings();
-  }, []);
+      const transformed: MeetingData[] = filteredData.map((item: any) => ({
+        id: `ASC_${item.meet_id}`,
+        title: item.title || "No Title",
+        name: item.notes || "-",
+        organized_by: item.organizer_firstname || "-",
+        status: item.status || "-",
+        lastdate: item.start_date_time
+          ? new Date(item.start_date_time).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            })
+          : "",
+      }));
+
+      setMeetings(transformed);
+    } catch (err) {
+      console.error("Error fetching meetings:", err);
+      setMeetings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchMeetings();
+}, [token, UserRole, staff_id]);
+
+
+
 
   if (loading) return <p>Loading meetings...</p>;
 
