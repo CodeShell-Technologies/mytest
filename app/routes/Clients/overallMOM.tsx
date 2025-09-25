@@ -312,7 +312,7 @@ export default function ClientMom() {
   const queryParams = new URLSearchParams(search);
   const navigate = useNavigate(); 
   const client_code = queryParams.get("client_code");
-
+const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const token = useAuthStore((state) => state.accessToken);
 
   const staff_id = useAuthStore((state: any) => state.staff_id);
