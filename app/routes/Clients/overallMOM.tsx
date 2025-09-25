@@ -294,6 +294,7 @@ import useBranchStore from "../../../src/stores/useBranchStore";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Eye, Pencil } from "lucide-react"; // 👈 icons
 import { BASE_URL, toastposition } from "~/constants/api";
+import BranchMeetingForm from "../Branch/Meeting/BranchMeetingForm";
 interface MeetingData {
   id: string;
   date: string;
@@ -322,6 +323,8 @@ const UserRole=useAuthStore((state=>state.role))
  const [filters, setFilters] = useState<Record<string, string>>({});
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
+
+const [showMeetingModal, setShowMeetingModal] = useState(false);
   // Handle filter change
   const handleFilterChange = (column: string, value: string) => {
     setFilters((prev) => ({
@@ -510,6 +513,11 @@ const handleView = (id: string) => {
 };
 
 
+const handleMeetingSuccess=()=>{
+     setShowMeetingModal(false);
+    toast.success("Meeting and Document Created successfully!");
+
+}
   const handleEdit = (id: string) => {
       const numericIds = id.replace("ASC_", "");
     navigate(`/meetings/${numericIds}`); // route to edit form
@@ -521,6 +529,13 @@ const handleView = (id: string) => {
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Meeting List</h2>
+
+              <button
+                onClick={() => setShowMeetingModal(true)}
+                className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
+              >
+                {!isMobile && "New Meeting"} <MessageSquareText className="ml-2" size={15}/>
+              </button>
 
  {/*<button
                   // onClick={() => setShowModal(true)}
@@ -603,6 +618,21 @@ const handleView = (id: string) => {
           ))}
         </tbody>
     </table>
+
+<Modal
+        isVisible={showMeetingModal}
+        className="w-full md:w-[800px]"
+        onClose={() =>setShowMeetingModal(false)}
+        title="Create Branch Meeting"
+        closeOnOutsideClick={false}
+      >
+        <BranchMeetingForm
+          branch={selectedBranch}
+          onSuccess={handleMeetingSuccess}
+          onCancel={() => setShowMeetingModal(false)}
+        />
+      </Modal>
+
     <div className="flex justify-between items-center mt-3">
         <span className="text-sm text-gray-600">
           Page {currentPage} of {totalPages}
