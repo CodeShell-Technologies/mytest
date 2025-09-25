@@ -183,7 +183,7 @@ useEffect(() => {
       const meetingCount =
         meetings.data.totalDocuments ?? meetings.data.total ?? 0;
 
-      setLeaves(meetingCount);
+      setMeetings(meetingCount);
     } catch (error) {
       console.error("Failed to fetch reminder counts", error);
     }
