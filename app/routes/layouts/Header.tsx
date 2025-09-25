@@ -21,6 +21,7 @@ export const Header = () => {
   const UserRole=useAuthStore((state=>state.role))
   const [count, setCount] = useState(0);
   const [leaves, setLeaves] = useState(0);
+  const [meetings,setMeetings] = useState(0);
 
   const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
 
@@ -165,6 +166,37 @@ useEffect(() => {
 }, [today, token]);
 
 
+
+useEffect(() => {
+  const fetchMeetings = async () => {
+    try {
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+
+      const [meetings] = await Promise.all([
+        axios.get(`${BASE_URL}/doc_meet/read?comm_type=meeting&status=active`, { headers }),
+      ]);
+
+      console.log("Leaves API:", meetings.data);
+
+      const meetingCount =
+        meetings.data.totalDocuments ?? meetings.data.total ?? 0;
+
+      setLeaves(meetingCount);
+    } catch (error) {
+      console.error("Failed to fetch reminder counts", error);
+    }
+  };
+
+  fetchMeetings();
+}, [today, token]);
+
+
+
+
+
+
 useEffect(() => {
   const fetchCounts = async () => { /* ...same as above... */ };
   fetchCounts();
@@ -275,6 +307,17 @@ const handleLogout = async () => {
 </div>
 )}
 
+<div
+  onClick={() => navigate("/events")}
+  className="relative inline-flex items-center cursor-pointer text-gray-600 hover:text-red-700 dark:text-gray-400 dark:hover:text-red-500"
+>
+  <span className="font-medium">Events</span>
+  {meetings > 0 && (
+    <span className="ml-2 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">
+      {meetings}
+    </span>
+  )}
+</div>
 
         <div className="relative inline-block">
       <Bell  onClick={() => navigate("/notification")} className="text-gray-600 hover:text-red-700 dark:text-gray-400 dark:hover:text-red-500 cursor-pointer" size={28} />

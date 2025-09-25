@@ -188,6 +188,7 @@ export default [
       route("/client_view", "routes/Clients/ClientPage.tsx"),
       route("/meeting_view/:id", "routes/Clients/MomViewPage.tsx"),
       route("/meetings/:id", "routes/Clients/EditMeetingModal.tsx"),
+      route("/events", "routes/Clients/overallMOM.tsx"),
       route("/campaign", "routes/Campaign/Campaign.tsx"),
       route("/account_profile", "routes/AccountProfile.tsx"),
       route("/team", "routes/Team/TeamList.tsx"),

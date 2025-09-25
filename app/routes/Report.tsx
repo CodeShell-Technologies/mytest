@@ -19,7 +19,7 @@ const Report = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const tabs = [
-    { id: "leadAnalysis", label: "Lead Analysis" },
+    // { id: "leadAnalysis", label: "Lead Analysis" },
     { id: "projectwisereport", label: "Project Summary" },
     { id: "paymentinsight", label: "Payment Summary" },
     { id: "employeereport", label: "Employee Summary" },
@@ -153,12 +153,12 @@ const Report = () => {
       </div>
     
       <div className="p-4 flex-grow">
-        {activeTab === "leadAnalysis" && (
+      {/*  {activeTab === "leadAnalysis" && (
           <>
     
           <CampaignReport/>
 </>
-        )}
+        )}*/}
         {activeTab =="EmployeeReport" &&(
           <TimeSheetReport/>
         )}{
