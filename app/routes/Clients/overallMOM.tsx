@@ -330,7 +330,7 @@ const UserRole=useAuthStore((state=>state.role))
  const [filters, setFilters] = useState<Record<string, string>>({});
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
 
-
+  const [selectedBranch, setSelectedBranch] = useState();
 const [showMeetingModal, setShowMeetingModal] = useState(false);
   // Handle filter change
   const handleFilterChange = (column: string, value: string) => {
