@@ -344,6 +344,7 @@ const AddNewTaskForm = ({ onSuccess, onCancel }) => {
         toast.success("Task created successfully!");
         onSuccess();
       } else {
+         alert ("Please verify the details and duration once. if the details are correct please ensure milestone status or task status should not be as draft.");
         setError(response.data.message || "Failed to create task");
       }
     } catch (err) {
