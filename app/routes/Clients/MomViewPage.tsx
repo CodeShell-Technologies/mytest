@@ -272,15 +272,25 @@ useEffect(() => {
     </h4>
     <div className="space-y-2">
       {meeting.doc.map((document) => (
+        // <a
+        //   key={document.id}
+        //   href={document.url}
+        //   target="_blank"
+        //   rel="noopener noreferrer"
+        //   className="block p-2 bg-gray-50 dark:bg-gray-700/30 rounded-md text-blue-600 dark:text-blue-400 hover:underline"
+        // >
+        //   {document.url}
+        // </a>
         <a
-          key={document.id}
-          href={document.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block p-2 bg-gray-50 dark:bg-gray-700/30 rounded-md text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          {document.url}
-        </a>
+  key={document.id}
+  href={`${BASE_URL.replace("/api", "")}/documents/${document.url}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="block p-2 bg-gray-50 dark:bg-gray-700/30 rounded-md text-blue-600 dark:text-blue-400 hover:underline"
+>
+  {document.url}
+</a>
+
       ))}
     </div>
   </div>

@@ -60,6 +60,7 @@ type Params = {
   "/meetings/:id": {
     "id": string;
   };
+  "/events": {};
   "/campaign": {};
   "/account_profile": {};
   "/team": {};

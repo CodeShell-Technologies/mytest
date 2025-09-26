@@ -65,7 +65,7 @@ const CreateBranchDepartment = ({branch, onSuccess, onCancel }) => {
       });
       if (response.status === 201) {
         onSuccess();
-        alert ("department created successfully!")
+        alert ("department created successfully!");
       } else {
         setError(response.data.message || "Failed to create branch");
       }
