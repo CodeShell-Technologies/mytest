@@ -196,10 +196,10 @@ const handleEditBranch = (branch) => {
     { data: "id" },
     { data: "Branch Code" },
     { data: "name" },
-    { data: "Location" },
-    { data: "Mobile" },
-    { data: "Manager ID" },
-    { data: "Status" },
+    { data: "Login Date" },
+    { data: "Time" },
+    // { data: "Manager ID" },
+    // { data: "Status" },
   ];
 
   const tbody = () => {
@@ -213,8 +213,8 @@ const handleEditBranch = (branch) => {
         { data: branch.staff_id },
         { data: branch.date },
         { data: branch.time },
-           { data: branch.ip },
-        { data: branch.device },
+           // { data: branch.ip },
+        // { data: branch.device },
        
       ],
     }));
