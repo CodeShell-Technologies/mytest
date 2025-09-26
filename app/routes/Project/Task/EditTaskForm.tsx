@@ -173,10 +173,12 @@ const EditTaskForm = ({ taskData, onSuccess, onCancel }) => {
       if (response.status === 200) {
         onSuccess();
       } else {
+                alert ("Failed to update. Please verfify the task & milestone status! if it fine please check whether you have enough permission to edit.");
         setError(response.data.message || "Failed to update task");
       }
     } catch (err) {
       setError(err.response?.data?.message || "An error occurred");
+      alert ("Failed to update. Please verfify the task & milestone status! if it fine please check whether you have enough permission to edit.");
       toast.error(err.response?.data?.message || "Error updating task");
     } finally {
       setLoading(false);

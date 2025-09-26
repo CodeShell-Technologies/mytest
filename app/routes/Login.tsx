@@ -224,7 +224,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   } catch (error: any) {
     if (error.code === "ECONNABORTED") {
       setError("Login request timed out. Please try again.");
-      alert("Login request timed out. Please try again.")
+      alert("Login request timed out. This id alredy being used in another device. logout there and Please try again after 15 mins.");
     } else {
       setError(error?.response?.data?.error || "Login failed. Please try again.");
     }

@@ -82,10 +82,12 @@ const branchCodeOption = userRole === "superadmin" ? branchCode : [{ value: bran
       if (response.status === 201) {
         onSuccess();
       } else {
+        alert ("Failed to create Campaign. Please retry after verify the given details!");
         setError(response.data.message || "Failed to create Campaign");
       }
     } catch (err) {
       setError(err.response?.data?.message || "An error occurred");
+              alert ("Failed to create Campaign. Please retry after verify the given details!");
       toast.error(`${error}, Error in create Camapign`, {
         style: {
           border: "1px solid rgb(185 28 28)",

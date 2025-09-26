@@ -586,10 +586,12 @@ const EditMilestoneForm = ({project,milestone, onSuccess, onCancel }) => {
       if (response.status === 200) {
         onSuccess();
       } else {
+      	alert ("Failed to update. Please verfify the milestone & project status! if it fine please check whether you have enough permission to edit.");
         setError(response.data.message || "Failed to update milestone");
       }
     } catch (err) {
       setError(err.response?.data?.message || "An error occurred");
+            	alert ("Failed to update. Please verfify the milestone & project status! if it fine please check whether you have enough permission to edit.");
       toast.error(error || "Error updating milestone");
     } finally {
       setLoading(false);

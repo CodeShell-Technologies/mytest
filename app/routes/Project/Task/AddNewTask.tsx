@@ -348,6 +348,7 @@ const AddNewTaskForm = ({ onSuccess, onCancel }) => {
       }
     } catch (err) {
       setError(err.response?.data?.message || "An error occurred");
+      alert ("Please verify the details and duration once. if the details are correct please ensure milestone status or task status should not be as draft.");
       toast.error(err.response?.data?.message || "Error creating task");
     } finally {
       setLoading(false);
@@ -742,7 +743,7 @@ const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) =
     collaborate.staff_id
       ? {
           value: collaborate.staff_id,
-          label: `${collaborate.staff_id}`,
+          label: `${collaborate.staff_name} (${collaborate.staff_id})`,
         }
       : null
   }

@@ -160,10 +160,12 @@ const AddNewLeadForm = ({ onSuccess, onCancel }) => {
       if (response.status === 201) {
         onSuccess();
       } else {
+        alert ("Failed to create lead. Please retry after verify the given lead details!");
         setError(response.data.message || "Failed to create lead");
       }
     } catch (err) {
       setError(err.response?.data?.message || "An error occurred");
+      alert ("Failed to create lead. Please retry after verify the given lead details!");
       toast.error(error || "Error creating lead");
     } finally {
       setLoading(false);

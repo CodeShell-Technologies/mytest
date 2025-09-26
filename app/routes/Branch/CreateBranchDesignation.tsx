@@ -65,6 +65,7 @@ const CreateBranchDesignation = ({branch, onSuccess, onCancel }) => {
       });
       if (response.status === 201) {
         onSuccess();
+        alert ("designation created successfully!");
       } else {
         setError(response.data.message || "Failed to create branch");
       }

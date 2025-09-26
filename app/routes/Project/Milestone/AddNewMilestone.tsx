@@ -142,10 +142,12 @@ const AddMilestone = ({ project,onSuccess, onCancel }) => {
         onSuccess();
       } else {
         setError(response.data.message || "Failed to create lead");
+                alert ("Failed to create milestone. Please verfify the milestone or project status! if it fine please check whether you have enough permission to create.");
       }
     } catch (err) {
       setError(err.response?.data?.message || "An error occurred");
-      toast.error(error || "Error creating lead");
+                      alert ("Failed to create milestone. Please verfify the milestone or project status! if it fine please check whether you have enough permission to create.");
+      toast.error(error || "Error creating milestone");
     } finally {
       setLoading(false);
     }

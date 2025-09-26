@@ -71,6 +71,7 @@ const CreateBranchRole = ({branch, onSuccess, onCancel }) => {
       });
       if (response.status === 201) {
         onSuccess();
+        alert ("Role created successfully! Please add in settigs section to create permissions.");
       } else {
         setError(response.data.message || "Failed to create branch");
       }
