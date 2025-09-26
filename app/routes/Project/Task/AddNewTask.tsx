@@ -738,25 +738,14 @@ const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) =
     )
   }
   isDisabled={!formData.team_id}
-  // value={
-  //   collaborate.staff_id
-  //     ? {
-  //         value: collaborate.staff_id,
-  //         label: `${collaborate.staff_name} (${collaborate.staff_id})`,
-  //       }
-  //     : null
-  // }
   value={
-  collaborate.staff_id
-    ? teamMembers
-        .map((member) => ({
-          value: member.staff_id,
-          label: `${member.staff_name} (${member.staff_id})`,
-        }))
-        .find((opt) => opt.value === collaborate.staff_id) || null
-    : null
-}
-
+    collaborate.staff_id
+      ? {
+          value: collaborate.staff_id,
+          label: `${collaborate.staff_id}`,
+        }
+      : null
+  }
   onChange={(selectedOption) =>
     handleCollaborateChange(index, {
       target: { name: "staff_id", value: selectedOption?.value ?? "" },
