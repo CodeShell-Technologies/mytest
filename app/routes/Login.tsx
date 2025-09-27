@@ -249,6 +249,23 @@ const handleSubmit = async (e: React.FormEvent) => {
     setShowPassword(!showPassword);
   };
 
+const restartService = async () => {
+  try {
+    const res = await fetch("/api/restart-service", { method: "POST" });
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ Service restart triggered!");
+    } else {
+      alert("❌ Failed to restart service");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("⚠️ Error contacting backend");
+  }
+};
+
+
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 h-screen w-full bg-gray-100 dark:bg-gray-100 relative">
       {isLoading && (
@@ -395,6 +412,13 @@ const handleSubmit = async (e: React.FormEvent) => {
             Sign In <IoIosArrowRoundForward className="inline" size={25} />
           </button>
         </form>
+<button
+  onClick={restartService}
+  className="px-6 py-2 mt-4 text-sm text-white bg-red-600 hover:bg-red-700 rounded-md transition-all w-fit self-center"
+>
+  Restart Services
+</button>
+
       </div>
 
       {/* Add this to your global CSS or CSS-in-JS */}
