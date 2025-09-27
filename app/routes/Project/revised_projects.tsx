@@ -202,7 +202,7 @@ if (hydrated && token) {
   ) => {
     setLoading(true);
     try {
-      let url = `${BASE_URL}/getrevisions?project_code=${encodeURIComponent(project_code)}&page=${page}&limit=${limit}`;
+      let url = `${BASE_URL}/getrevisions?project_code=${project_code}&page=${page}&limit=${limit}`;
 
     	// let url = `${BASE_URL}/getprojectaccess?userRole=${UserRole}&userId=${encodeURIComponent(staff_id)}&useBranchcode=${encodeURIComponent(branchcode)}&page=${page}&limit=${limit}`;
 

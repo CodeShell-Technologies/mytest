@@ -413,6 +413,7 @@ const AddPaymentForm = ({ onSuccess, onCancel }) => {
 
       if (response.status === 200) {
         toast.success("Payment added successfully");
+        alert ("payment request added successfully!");
         onSuccess();
       } else {
         setError(response.data.message || "Failed to add payment");

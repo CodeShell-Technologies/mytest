@@ -49,7 +49,7 @@ const ProjectFiles = () => {
     { id: "clientdocuments", label: "Client Documents" },
     { id: "finaldocument", label: "Final Documents" },
     { id: "draftdocuments", label: "Draft Documents" },
-      { id: "meetingdocuments", label: "Meeting Documents" },
+      // { id: "meetingdocuments", label: "Meeting Documents" },
   ];
 
   return (
@@ -78,7 +78,7 @@ const ProjectFiles = () => {
 
           {activeTab === "finaldocument" && <FinalDocument  />}
           {activeTab === "draftdocuments" && <DraftDocument/>}
-            {activeTab === "meetingdocuments" && <MeetingDocuments />}
+            {/*{activeTab === "meetingdocuments" && <MeetingDocuments />}*/}
         </div>
       </div>
 
