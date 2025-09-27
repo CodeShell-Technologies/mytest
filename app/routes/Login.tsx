@@ -415,7 +415,7 @@ const restartService = async () => {
 <button
   onClick={restartService}
   className="px-6 py-2 mt-4 text-sm text-white bg-red-600 hover:bg-red-700 rounded-md transition-all w-fit self-center"
->
+disabled>
   Restart Services
 </button>
 
