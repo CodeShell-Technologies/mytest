@@ -850,14 +850,14 @@ const handleUpload = async () => {
               </button>
               )}
 
-              	{roleAccess?.project?.create && (
+  {/*            	{roleAccess?.project?.create && (
   <button
     onClick={() => setShowCreateModal(true)}
     className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 font-medium text-sm rounded-sm px-5 py-2.5"
   >
     {!isMobile && "New Project"} +
   </button>
-)}
+)}*/}
 
             </div>
           </div>

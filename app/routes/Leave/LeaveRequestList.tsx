@@ -188,11 +188,54 @@ const role = userRole;
 }, [hydrated,selectedBranchCode, token, role, userBranchCode]);
 
   // Fetch leave requests
+  // const fetchLeaveRequests = async () => {
+  //   setLoading(true);
+  //   try {
+  //     let url = `${BASE_URL}/users/leavereq/read`;
+  //     const params = new URLSearchParams();
+  //     if (role === "superadmin") {
+  //       if (selectedBranchCode) params.append("branchcode", selectedBranchCode);
+  //       if (selectedStaffId) params.append("staff_id", selectedStaffId);
+  //     } else if (role === "hr") {
+  //       params.append("branchcode", userBranchCode);
+  //       if (selectedStaffId) params.append("staff_id", selectedStaffId);
+  //     } else {
+  //       params.append("staff_id", staff_id);
+  //     }
+
+  //     // Common parameters
+  //     if (selectedStatus) params.append("status", selectedStatus);
+  //     if (startDate) params.append("start_date", formatDate(startDate));
+  //     if (endDate) params.append("end_date", formatDate(endDate));
+  //     params.append("page", currentPage);
+  //     params.append("limit", pageSize);
+
+  //     url += `?${params.toString()}`;
+
+  //     const response = await axios.get(url, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+
+  //     if (response.data) {
+  //       setLeaveRequests(response.data.data || []);
+  //       setTotalItem(response.data.totalDocuments || 0);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching leave requests", error);
+  //     toast.error("Failed to fetch leave requests");
+  //     setError("Failed to fetch data");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const fetchLeaveRequests = async () => {
     setLoading(true);
     try {
       let url = `${BASE_URL}/users/leavereq/read`;
       const params = new URLSearchParams();
+
       if (role === "superadmin") {
         if (selectedBranchCode) params.append("branchcode", selectedBranchCode);
         if (selectedStaffId) params.append("staff_id", selectedStaffId);
@@ -203,14 +246,15 @@ const role = userRole;
         params.append("staff_id", staff_id);
       }
 
-      // Common parameters
       if (selectedStatus) params.append("status", selectedStatus);
       if (startDate) params.append("start_date", formatDate(startDate));
       if (endDate) params.append("end_date", formatDate(endDate));
+
       params.append("page", currentPage);
       params.append("limit", pageSize);
 
       url += `?${params.toString()}`;
+      console.log("Fetching:", url); // ✅ debug
 
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -228,6 +272,9 @@ const role = userRole;
       setLoading(false);
     }
   };
+
+
+
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -303,6 +350,10 @@ const role = userRole;
     XLSX.utils.book_append_sheet(wb, ws, "LeaveRequests");
     XLSX.writeFile(wb, "LeaveRequests.xlsx");
   };
+
+
+
+
 
   useEffect(() => {
     if (hydrated && token) {
