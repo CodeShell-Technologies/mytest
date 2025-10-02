@@ -610,9 +610,7 @@ const AddNewTaskForMilestone = ({milestone, onSuccess, onCancel }) => {
 
       if (response.data && response.data.data) {
         // Filter out team leads (role === "lead")
-        const members = response.data.data.members.filter(
-          (member) => member.role !== "lead"
-        );
+        const members = response.data.data.members;
         setTeamMembers(members);
 
         // Auto-set handler_by to the team lead
