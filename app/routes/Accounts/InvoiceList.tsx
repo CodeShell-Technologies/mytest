@@ -13,6 +13,10 @@ import { useMediaQuery } from "../hooks/use-click-outside";
 import Modal from "src/component/Modal";
 import { useNavigate } from "react-router";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";// ⚠️ this adds autoTable to jsPDF
+
+
 const InvoiceList = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,6 +39,13 @@ const InvoiceList = () => {
     payment_mode: "upi",
     notes: "",
   });
+
+  const [summary, setSummary] = useState(null);
+  const [dueStart, setDueStart] = useState("");
+const [dueEnd, setDueEnd] = useState("");
+const [invoiceStart, setInvoiceStart] = useState("");
+const [invoiceEnd, setInvoiceEnd] = useState("");
+
 
   const accesstoken = useAuthStore((state) => state.accessToken);
   const userRole = useAuthStore((state) => state.role);
@@ -82,6 +93,18 @@ const InvoiceList = () => {
         userRole === "superadmin" ? branchcode : staticBranchCode;
       if (branchFilter) url += `&branchcode=${branchFilter}`;
 
+
+      // 🔹 Add due date filters
+if (dueStart && dueEnd) url += `&start_date=${dueStart}&end_date=${dueEnd}`;
+else if (dueStart) url += `&start_date=${dueStart}`;
+else if (dueEnd) url += `&end_date=${dueEnd}`;
+
+// 🔹 Add invoice date filters
+if (invoiceStart && invoiceEnd) url += `&invoice_start_date=${invoiceStart}&invoice_end_date=${invoiceEnd}`;
+else if (invoiceStart) url += `&invoice_start_date=${invoiceStart}`;
+else if (invoiceEnd) url += `&invoice_end_date=${invoiceEnd}`;
+
+
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -89,6 +112,7 @@ const InvoiceList = () => {
       setSheetData(response?.data?.data || []);
       setTotalItem(response?.data?.totalDocuments || 0);
       setData(response?.data?.data || []);
+      setSummary(response?.data?.summary || null); // ✅ add this
     } catch (error) {
       console.error("Error fetching payments", error);
       setError("Failed to fetch payments");
@@ -171,6 +195,7 @@ const token = accesstoken;
     selectedBranchCode,
     pageSize,
     userRole,
+    dueStart, dueEnd, invoiceStart, invoiceEnd 
   ]);
 
   const handlePageChange = (page) => {
@@ -191,6 +216,59 @@ const token = accesstoken;
     setSelectedBranchCode(value);
     setCurrentPage(1);
   };
+
+const handleOnExportPDF = () => {
+  if (!sheetData || sheetData.length === 0) return;
+
+  const doc = new jsPDF();
+
+  // Title
+  doc.setFontSize(18);
+  doc.text("Invoice List", 14, 22);
+
+  // Table Columns
+  const tableColumn = [
+    "Invoice No",
+    "Client",
+    "Project",
+    "Total Amount",
+    "Paid Amount",
+    "Balance",
+    "Status",
+    "Due Date",
+  ];
+
+  // Table Rows
+  const tableRows: any[] = sheetData.map((item) => {
+    const invoice = item.invoice;
+    return [
+      invoice.invoice_no,
+      invoice.client_name,
+      invoice.project_title,
+      invoice.total_amount,
+      invoice.paid_amount,
+      invoice.balance_amount,
+      invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1),
+      new Date(invoice.due_date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+    ];
+  });
+
+  // Add autoTable
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 30,
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [22, 160, 133] },
+  });
+
+  doc.save("InvoiceList.pdf");
+};
+
 
   const handlePageSizeChange = (value) => {
     setPageSize(value);
@@ -332,12 +410,20 @@ const token = accesstoken;
               />
 
 
-              <button
+             {/* <button
       onClick={() => navigate("/invoice_create")}
       className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
     >
       + New Invoice
-    </button>
+    </button>*/}
+
+<button
+  onClick={handleOnExportPDF}
+  className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+>
+  <FileDown className="mr-1" />
+  {!isMobile && "Export PDF"}
+</button>
 
 
               <button
@@ -376,7 +462,45 @@ const token = accesstoken;
                   placeholder="Branch Code"
                   className="w-full md:w-[200px]"
                 />
-              )}
+              
+)}
+{/* Due Date Filter */}
+<div className="flex items-center gap-2">
+  <label className="text-xs text-gray-500">Due From:</label>
+  <input
+    type="date"
+    value={dueStart}
+    onChange={(e) => setDueStart(e.target.value)}
+    className="border rounded p-1 text-sm"
+  />
+  <label className="text-xs text-gray-500">To:</label>
+  <input
+    type="date"
+    value={dueEnd}
+    onChange={(e) => setDueEnd(e.target.value)}
+    className="border rounded p-1 text-sm"
+  />
+</div>
+
+{/* Invoice Date Filter */}
+<div className="flex items-center gap-2">
+  <label className="text-xs text-gray-500">Invoice From:</label>
+  <input
+    type="date"
+    value={invoiceStart}
+    onChange={(e) => setInvoiceStart(e.target.value)}
+    className="border rounded p-1 text-sm"
+  />
+  <label className="text-xs text-gray-500">To:</label>
+  <input
+    type="date"
+    value={invoiceEnd}
+    onChange={(e) => setInvoiceEnd(e.target.value)}
+    className="border rounded p-1 text-sm"
+  />
+</div>
+
+
 
               <div className={`${isMobile ? "w-full" : "w-[200px] mt-3"}`}>
                 <SearchInput
@@ -394,11 +518,41 @@ const token = accesstoken;
             <div className="text-red-500 text-center py-4">{error}</div>
           )}
 
+          {summary && (
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total Invoices</p>
+      <p className="text-lg font-semibold">{summary.total_invoices}</p>
+    </div>
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total Amount</p>
+      <p className="text-lg font-semibold text-blue-600">
+        {formatCurrency(summary.total_amount)}
+      </p>
+    </div>
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total Paid</p>
+      <p className="text-lg font-semibold text-green-600">
+        {formatCurrency(summary.total_paid)}
+      </p>
+    </div>
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total Balance</p>
+      <p className="text-lg font-semibold text-red-600">
+        {formatCurrency(summary.total_balance)}
+      </p>
+    </div>
+  </div>
+)}
+
+
           <div className="overflow-x-auto">
             <DataTable
               thead={thead}
               tbody={tbody}
               responsive={true}
+              enableFilters={true}
+  enableSorting={true}
               className="min-w-full"
             />
           </div>

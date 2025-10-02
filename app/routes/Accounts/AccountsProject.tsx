@@ -32,6 +32,12 @@ import PayRequestList from "./PayRequestList";
 import { FaMoneyBill } from "react-icons/fa";
 import AddPayRequest from "./payrequest/AddPayRequest";
 import InvoiceList from "./InvoiceList";
+import PayRequestOverallList from "./payreqest_overall";
+import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable"; // important for TS
+
+
 const AccountsProject = () => {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,14 +67,16 @@ const AccountsProject = () => {
     delete_type: "",
     status: "",
   });
+   const navigate = useNavigate();
   const {fetchProject,
    
      }=useProjectStore();
 const branchcode=useAuthStore((state)=>state.branchcode)
-
+const [selectedPayStatus, setSelectedPayStatus] = useState("");
   const tabs = [
     { id: "projectlist", label: "Project List" },
     { id: "payrequest", label: "Invoice List" },
+    { id: "payrequestlist", label: "Payment Requests" },
   ];
   const {
     branchCodeOptions,
@@ -92,6 +100,14 @@ const branchcode=useAuthStore((state)=>state.branchcode)
     { value: "revised", label: "revised Project" },
     { value: "client_review", label: "client_review Project" },
     { value: "drop", label: "drop Project" },
+  ];
+  const payStatusOptions = [
+    { value: "", label: "All Payment Status" },
+    { value: "paid", label: "Paid" },
+    { value: "payment_closed", label: "Payment Closed" },
+    { value: "request", label: "Payment Request" },
+    { value: "mid_payment", label: "Mid Payment" },
+    { value: "none", label: "No Payment" },
   ];
 
   const pageSizeOptions = [
@@ -130,6 +146,7 @@ const token = accesstoken;
     search = searchTerm,
     status = selectStatus,
     priority = selectedPriority,
+    paystatus = selectedPayStatus,
     branchCode = selectedBranchCode,
     sort = sortOrder
   ) => {
@@ -141,6 +158,7 @@ const token = accesstoken;
       if (status) url += `&status=${status}`;
       if (priority) url += `&priority=${priority}`;
       if (branchCode) url += `&branchcode=${branchCode}`;
+      if (paystatus) url += `&paystatus=${paystatus}`;
       if (sort) url += `&dec=${sort}`;
 
       const response = await axios.get(url, {
@@ -170,6 +188,7 @@ const token = accesstoken;
     selectStatus,
     selectedPriority,
     selectedBranchCode,
+    selectedPayStatus,
     sortOrder,
     pageSize,
   ]);
@@ -190,6 +209,12 @@ const token = accesstoken;
     setCurrentPage(1);
   };
 
+
+const handlePayStatusChange = (value) => {
+    setSelectedPayStatus(value);
+    setCurrentPage(1);
+  };
+
   const handleEditBranch = (branch) => {
     setSelectedBranch(branch);
     setShowEditModal(true);
@@ -199,6 +224,53 @@ const token = accesstoken;
     setShowDeleteModal(true);
     setDeleteData(project);
   };
+
+
+const handleOnExportPDF = () => {
+  if (!sheetData || sheetData.length === 0) return;
+
+  const doc = new jsPDF();
+
+  // Title
+  doc.setFontSize(18);
+  doc.text("Project List", 14, 22);
+
+  // Columns
+  const tableColumn = [
+    "S.No",
+    "Branch Code",
+    "Project Code",
+    "Project Name",
+    "Client Code",
+    "Payment Status",
+    "Duration (Days)",
+    "Project Status",
+  ];
+
+  // Rows
+  const tableRows: any[] = sheetData.map((project, index) => [
+    index + 1,
+    project.branchcode,
+    project.project_code,
+    project.title,
+    project.client_code,
+    project.paystatus,
+    project.duration_days,
+    project.status.charAt(0).toUpperCase() + project.status.slice(1),
+  ]);
+
+  // Add autoTable
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 30,
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [22, 160, 133] },
+  });
+
+  doc.save("ProjectList.pdf");
+};
+
 
   const handleDeleteSubmit = async () => {
     const deletedData = {
@@ -287,7 +359,7 @@ const token = accesstoken;
     if (!data) return [];
 
     return data.map((project, index) => ({
-      id: project.id,
+      id: project.project_code,
       data: [
         { data: index + 1 },
 
@@ -419,6 +491,14 @@ const handleMeetingSuccess=()=>{
                 className="w-full md:w-[150px]"
               />
               <button
+  onClick={handleOnExportPDF}
+  className="flex items-center justify-center text-gray-400 bg-white focus:outline-none font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
+>
+  <FileDown className="mr-1" />
+  {!isMobile && "Export PDF"}
+</button>
+
+              <button
                 onClick={handleOnExport}
                 className="flex items-center justify-center text-gray-400 bg-white focus:outline-non font-medium text-sm rounded-sm border border-dotted border-gray-400 hover:text-red-700/70 px-3 dark:bg-gray-800 dark:text-gray-300 py-2.5"
               >
@@ -458,13 +538,21 @@ const handleMeetingSuccess=()=>{
                 isLoading={isStoreLoading}
               />
 
-              <Dropdown
+{/*              <Dropdown
                 options={managerOptions}
                 selectedValue={selectedPriority}
                 onSelect={handleManagerChange}
                 placeholder="Priority"
                 className="w-full md:w-[200px]"
                 isLoading={isStoreLoading}
+              />
+*/}
+              <Dropdown
+                options={payStatusOptions}
+                selectedValue={selectedPayStatus}
+                onSelect={handlePayStatusChange}
+                placeholder="Payment Status"
+                className="w-full md:w-[200px]"
               />
 
               <button
@@ -495,7 +583,11 @@ const handleMeetingSuccess=()=>{
               thead={thead}
               tbody={tbody}
               responsive={true}
+              enableFilters={true}
+  enableSorting={true}
               className="min-w-full"
+                onRowDoubleClick={(row) => navigate(`/projectaccount/${encodeURIComponent(row.id)}`)}
+    
             />
           </div>
         </div>
@@ -514,6 +606,9 @@ const handleMeetingSuccess=()=>{
         )}
      {activeTab === "payrequest" && (
       <InvoiceList/>
+     )}
+     {activeTab === "payrequestlist" && (
+      <PayRequestOverallList/>
      )}
 
      

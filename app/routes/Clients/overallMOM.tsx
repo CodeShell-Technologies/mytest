@@ -302,6 +302,8 @@ import { CgExport } from "react-icons/cg";
 import { BASE_URL, toastposition } from "~/constants/api";
 import BranchMeetingForm from "../Branch/Meeting/BranchMeetingForm";
 import { useMediaQuery } from "../hooks/use-click-outside";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 interface MeetingData {
   id: string;
   date: string;
@@ -332,6 +334,10 @@ const UserRole=useAuthStore((state=>state.role))
 
   const [selectedBranch, setSelectedBranch] = useState();
 const [showMeetingModal, setShowMeetingModal] = useState(false);
+const [startDate, setStartDate] = useState<string>("");
+const [endDate, setEndDate] = useState<string>("");
+
+
   // Handle filter change
   const handleFilterChange = (column: string, value: string) => {
     setFilters((prev) => ({
@@ -362,6 +368,26 @@ const [showMeetingModal, setShowMeetingModal] = useState(false);
         );
       }
     });
+
+
+
+  // Start / End Date filter
+  if (startDate) {
+    const start = new Date(startDate);
+    data = data.filter((item) => {
+      const itemDate = new Date(item.lastdate.split("/").reverse().join("-"));
+      return itemDate >= start;
+    });
+  }
+
+  if (endDate) {
+    const end = new Date(endDate);
+    data = data.filter((item) => {
+      const itemDate = new Date(item.lastdate.split("/").reverse().join("-"));
+      return itemDate <= end;
+    });
+  }
+
 
     // Sorting
     // if (sortConfig) {
@@ -404,7 +430,7 @@ if (sortConfig) {
 
 
     return data;
-  }, [meetings, filters, sortConfig]);
+  }, [meetings, filters, startDate,endDate,sortConfig]);
 
 //   useEffect(() => {
 //     const fetchMeetings = async () => {
@@ -506,8 +532,6 @@ useEffect(() => {
 }, [token, UserRole, staff_id]);
 
 
-
-
   if (loading) return <p>Loading meetings...</p>;
 
 
@@ -525,6 +549,38 @@ const handleMeetingSuccess=()=>{
     toast.success("Meeting and Document Created successfully!");
 
 }
+
+
+const exportPDF = () => {
+  const doc = new jsPDF();
+  doc.setFontSize(14);
+  doc.text("Meeting List", 14, 20);
+
+  const tableColumn = ["ID", "Title", "Organized By", "Status", "Meeting Date"];
+  const tableRows: any[] = [];
+
+  filteredMeetings.forEach((meeting) => {
+    const meetingData = [
+      meeting.id,
+      meeting.title,
+      meeting.organized_by,
+      meeting.status,
+      meeting.lastdate,
+    ];
+    tableRows.push(meetingData);
+  });
+
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 30,
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [220, 53, 69], textColor: 255 },
+  });
+
+  doc.save("meeting_list.pdf");
+};
+
   const handleEdit = (id: string) => {
       const numericIds = id.replace("ASC_", "");
     navigate(`/meetings/${numericIds}`); // route to edit form
@@ -535,14 +591,38 @@ const handleMeetingSuccess=()=>{
 
   return (
     <div>
+       <div className="flex gap-3 mb-4 flex-wrap">
+  <button
+    onClick={() => setShowMeetingModal(true)}
+    className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-none font-medium text-sm rounded-sm px-5 py-2.5"
+  >
+    {!isMobile && "New Meeting"} <MessageSquareText className="ml-2" size={15} />
+  </button>
+
+  <button
+    onClick={exportPDF}
+    className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm flex items-center"
+  >
+    Export PDF
+  </button>
+</div>
+
       <h2 className="text-xl font-semibold mb-4">Meeting List</h2>
 
-              <button
-                onClick={() => setShowMeetingModal(true)}
-                className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
-              >
-                {!isMobile && "New Meeting"} <MessageSquareText className="ml-2" size={15}/>
-              </button>
+ <th className="border p-1 flex gap-1">
+    <input
+      type="date"
+      className="w-1/2 p-1 text-sm border rounded"
+      value={startDate}
+      onChange={(e) => setStartDate(e.target.value)}
+    />
+    <input
+      type="date"
+      className="w-1/2 p-1 text-sm border rounded"
+      value={endDate}
+      onChange={(e) => setEndDate(e.target.value)}
+    />
+  </th>             
 
  {/*<button
                   // onClick={() => setShowModal(true)}

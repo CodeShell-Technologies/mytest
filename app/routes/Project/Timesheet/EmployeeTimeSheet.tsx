@@ -607,6 +607,7 @@ import { useAuthStore } from "src/stores/authStore";
 import useBranchStore from "src/stores/useBranchStore";
 import { useMediaQuery } from "~/routes/hooks/use-click-outside";
 import DatePicker from "react-datepicker";
+import moment from "moment";
 import "react-datepicker/dist/react-datepicker.css";
 
 
@@ -630,6 +631,10 @@ const EmployeeTimeSheet = () => {
   const [projectOptions, setProjectOptions] = useState([]);
   const [activeTab, setActiveTab] = useState("checkinout");
   const [sortOrder, setSortOrder] = useState("");
+
+    const [selectedMember, setSelectedMember] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedendDate, setSelectedendDate] = useState("");
 
   // Auth store data
   const token = useAuthStore((state) => state.accessToken);
@@ -718,7 +723,7 @@ console.log("roleeeeee",role,userBranchCode,staff_id)
         }
       } catch (error) {
         console.error("Error fetching staff list", error);
-        toast.error("Failed to fetch staff");
+        // toast.error("Failed to fetch staff");
       } finally {
         setLoading(false);
       }
@@ -755,7 +760,7 @@ console.log("roleeeeee",role,userBranchCode,staff_id)
         }
       } catch (error) {
         console.error("Error fetching project list", error);
-        toast.error("Failed to fetch projects");
+        // toast.error("Failed to fetch projects");
       } finally {
         setLoading(false);
       }
@@ -775,6 +780,12 @@ console.log("roleeeeee",role,userBranchCode,staff_id)
       return;
     }
 
+
+
+      // if (selectedMember) {
+      //   params.staff_id = selectedMember;
+      // }
+
     setLoading(true);
     try {
       let url = `${BASE_URL}/project/task/checkinout/read?staff_id=${encodeURIComponent(staffIdToUse)}`;
@@ -782,16 +793,26 @@ console.log("roleeeeee",role,userBranchCode,staff_id)
       if (taskId) {
         url += `&task_id=${taskId}`;
       }
-      if (startDate) {
-        const formattedStartDate = formatDate(startDate);
-        url += `&start_date=${formattedStartDate}`;
-      }
-      if (endDate) {
-        const formattedEndDate = formatDate(endDate);
-        url += `&end_date=${formattedEndDate}`;
-      }
+      // if (startDate) {
+      //   const formattedStartDate = formatDate(startDate);
+      //   url += `&start_date=${formattedStartDate}`;
+      // }
+      // if (endDate) {
+      //   const formattedEndDate = formatDate(endDate);
+      //   url += `&end_date=${formattedEndDate}`;
+      // }
       if (sortOrder) {
         url += `&dec=${sortOrder}`;
+      }
+
+         if (selectedDate) {
+        const formattedStartDate = moment(selectedDate).format("YYYY-MM-DD");
+        url += `&start_date=${formattedStartDate}`;
+      }
+
+      if (selectedendDate) {
+        const formattedEndDate = moment(selectedendDate).format("YYYY-MM-DD");
+        url += `&end_date=${formattedEndDate}`;
       }
 
       const response = await axios.get(url, {
@@ -805,7 +826,7 @@ console.log("roleeeeee",role,userBranchCode,staff_id)
     } catch (error) {
       console.error("Error fetching check-in/out data", error);
       toast.error("Failed to fetch check-in/out data");
-      setError("Failed to fetch data");
+      // setError("Failed to fetch data");
     } finally {
       setLoading(false);
     }
@@ -1141,6 +1162,32 @@ const formatDuration = (minutes: number) => {
                 />
               )}
 
+
+                          <div className="flex gap-4 flex-wrap mb-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-4 py-2 border rounded-md text-sm bg-white dark:bg-dark-900 dark:border-gray-600"
+              />
+            </div>
+
+            <div className="flex gap-4 flex-wrap mb-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={selectedendDate}
+                onChange={(e) => setSelectedendDate(e.target.value)}
+                className="px-4 py-2 border rounded-md text-sm bg-white dark:bg-dark-900 dark:border-gray-600"
+              />
+            </div>
+
+
               {/* Task ID input - visible for all roles */}
               <div className="w-[245px]">
                 <input
@@ -1184,10 +1231,7 @@ const formatDuration = (minutes: number) => {
               <button
                 onClick={generateReport}
                 className="flex items-center justify-center text-white bg-[var(--color-primary)] hover-effect dark:bg-red-800 focus:outline-non font-medium text-sm rounded-sm px-5 py-2.5"
-                disabled={
-                  (role !== 'team-lead' && role !=="superadmin" ? false : !selectedStaffId) ||
-                  loading
-                }
+                
               >
                 {loading ? "Loading..." : "Generate Report"}
               </button>

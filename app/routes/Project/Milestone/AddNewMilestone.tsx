@@ -12,7 +12,7 @@ import {
   Target,
   User,
 } from "lucide-react";
-import { useState,useEffect } from "react";
+import { useState,useEffect ,useRef } from "react";
 import toast from "react-hot-toast";
 import { AiFillProject } from "react-icons/ai";
 import { ButtonLoader } from "src/component/Loaders/ButtonLoader";
@@ -115,7 +115,9 @@ const AddMilestone = ({ project,onSuccess, onCancel }) => {
           project_code: project.project_code,
           milestone_code: formData.milestone_code,
           miles_title: formData.miles_title,
-          milestone_type: formData.milestone_type,
+          // milestone_type: formData.milestone_type,
+                  milestone_type:
+          formData.milestone_type === "other" ? formData.customType : formData.milestone_type,
           start_date: formData.start_date,
           end_date: formData.end_date,
           base_amount: Number(formData.base_amount),
@@ -318,6 +320,63 @@ useEffect(() => {
 }, [formData.department]);
 
 
+        const [types, setTypes] = useState<string[]>([]);
+
+
+
+useEffect(() => {
+  const fetchMilestoneTypes = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/getmilestonetype`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // only if required
+        },
+      });
+      const json = await res.json();
+
+      if (json?.milestone_types) {
+        // directly set since backend already returns unique list
+        // setCommtypes(json.comm_types);
+        setTypes(json.milestone_types);
+      } else {
+        // setCommtypes([]);
+        setTypes([]);
+      }
+    } catch (error) {
+      console.error("Failed to load comm types:", error);
+    }
+  };
+
+  fetchMilestoneTypes();
+}, [token]);
+
+
+
+// At the top (in your component)
+const [query, setQuery] = useState("");
+const [showDropdown, setShowDropdown] = useState(false);
+const dropdownRef = useRef(null);
+
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      setShowDropdown(false);
+    }
+  };
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
+
+// Filter milestone types based on input
+const filteredTypes = types.filter((type) =>
+  type.toLowerCase().includes(query.toLowerCase())
+);
+
+
+
+
+
+
  const loadDeps = (inputValue: string, callback: (options: Option[]) => void) => {
   const filtered = departmentOptions.filter((c) =>
     c.label.toLowerCase().includes(inputValue.toLowerCase())
@@ -422,7 +481,7 @@ const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) =
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Tag className="inline mr-1" size={14} /> Milestone Type
             </p>
-            <select
+{/*            <select
               name="milestone_type"
               value={formData.milestone_type}
               onChange={handleChange}
@@ -435,7 +494,112 @@ const loadStaffs = (inputValue: string, callback: (options: Option[]) => void) =
               <option value="revision-major">Major Revision</option>
               <option value="feature_add">Feature Add</option>
               <option value="bug_fix">Changes Fix</option>
-            </select>
+            </select>*/}
+{/*
+                                      <select
+    name="milestone_type"
+    value={formData.milestone_type}
+    onChange={(e) => {
+      const value = e.target.value;
+      if (value === "other") {
+        setFormData((prev) => ({ ...prev, milestone_type: "other", customType: "" }));
+      } else {
+        setFormData((prev) => ({ ...prev, milestone_type: value, customType: "" }));
+      }
+    }}
+    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    required
+  >
+    <option value="">Select type</option>
+    {types.map((t) => (
+      <option key={t} value={t}>
+        {t}
+      </option>
+    ))}
+    <option value="other">Add New</option>
+  </select>
+
+  {/* Show custom input if "Other" selected */}
+{/*}  {formData.milestone_type === "other" && (
+    <input
+      type="text"
+      name="customType"
+      value={formData.customType || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, customType: e.target.value }))
+      }
+      className="mt-2 w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+      placeholder="Enter new type"
+      required
+    />
+  )}
+*/}
+
+<div className="relative" ref={dropdownRef}>
+  <input
+    type="text"
+    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 border-b border-gray-300 dark:border-gray-600 focus:outline-none"
+    placeholder="Select or type to search"
+    value={formData.milestone_type === "other" ? "" : query}
+    onClick={() => setShowDropdown(true)}
+    onChange={(e) => {
+      setQuery(e.target.value);
+      setFormData((prev) => ({ ...prev, milestone_type: "" })); // Clear selection
+      setShowDropdown(true);
+    }}
+    required
+  />
+
+  {showDropdown && (
+    <ul className="absolute z-10 mt-1 w-full max-h-48 overflow-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
+      {filteredTypes.map((type) => (
+        <li
+          key={type}
+          onClick={() => {
+            setFormData((prev) => ({ ...prev, milestone_type: type, customType: "" }));
+            setQuery(type);
+            setShowDropdown(false);
+          }}
+          className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+        >
+          {type}
+        </li>
+      ))}
+
+      <li
+        onClick={() => {
+          setFormData((prev) => ({ ...prev, milestone_type: "other", customType: "" }));
+          setQuery("");
+          setShowDropdown(false);
+        }}
+        className="cursor-pointer px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
+        ➕ Add New
+      </li>
+    </ul>
+  )}
+
+  {/* Custom input if "Other" selected */}
+  {formData.milestone_type === "other" && (
+    <input
+      type="text"
+      name="customType"
+      value={formData.customType || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, customType: e.target.value }))
+      }
+      className="mt-2 w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+      placeholder="Enter new type"
+      required
+    />
+  )}
+</div>
+
+
+
+
+
+
           </div>
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">

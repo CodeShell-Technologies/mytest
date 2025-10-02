@@ -276,7 +276,7 @@ if (hydrated && token) {
                   {Project.budget}
                 </div>
                 <div>
-                  <span className="font-semibold">Overall Cost:</span> ₹
+                  <span className="font-semibold">Active Milestone Cost:</span> ₹
                   {Project.overallcost}
                 </div>
                 <div>

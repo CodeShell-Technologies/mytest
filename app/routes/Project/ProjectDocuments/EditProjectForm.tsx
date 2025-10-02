@@ -887,7 +887,7 @@ const [types, setTypes] = useState<string[]>([]);
 
           <div className="bg-gray-50 dark:bg-gray-700/70 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              <IndianRupee className="inline mr-1" size={14} /> Overall cost
+              <IndianRupee className="inline mr-1" size={14} /> Active Milestone cost
             </p>
             <input
               name="overallcost"

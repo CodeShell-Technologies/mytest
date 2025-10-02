@@ -224,7 +224,9 @@ function EmployeeForm({ onSuccess, onCancel }) {
         dob: formData.dob,
         gender: formData.gender,
         marital: formData.maritalStatus,
-        bloodgroup: formData.bloodGroup,
+        // bloodgroup: formData.bloodGroup,
+        bloodgroup:
+          formData.bloodgroup === "other" ? formData.customType : formData.bloodgroup,
         phonenumber: formData.mobileNo,
         alternumber: formData.residenceContactNo,
         email: formData.email,
@@ -335,6 +337,49 @@ setDepartmentDesignations(deptDesigs);
       setDesignationOptions([]);
     }
   }, [formData.department, departmentDesignations]);
+
+
+
+
+
+        const [types, setTypes] = useState<string[]>([]);
+
+
+
+useEffect(() => {
+  const fetchBloodTypes = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/getbloods`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // only if required
+        },
+      });
+      const json = await res.json();
+
+      if (json?.blood_types) {
+        // directly set since backend already returns unique list
+        // setCommtypes(json.comm_types);
+        setTypes(json.blood_types);
+      } else {
+        // setCommtypes([]);
+        setTypes([]);
+      }
+    } catch (error) {
+      console.error("Failed to load blood types:", error);
+    }
+  };
+
+  fetchBloodTypes();
+}, [token]);
+
+
+
+
+
+
+
+
+
 
 
 
@@ -473,7 +518,7 @@ const loadDesg = (inputValue: string, callback: (options: Option[]) => void) => 
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <Droplets className="inline mr-1" size={14} /> Blood Group <span className="text-red-700 text-lg m-2">*</span>
             </p>
-            <select
+            {/*<select
               name="bloodGroup"
               value={formData.bloodGroup}
               onChange={handleChange}
@@ -489,7 +534,49 @@ const loadDesg = (inputValue: string, callback: (options: Option[]) => void) => 
               <option value="AB-">AB-</option>
               <option value="O+">O+</option>
               <option value="O-">O-</option>
-            </select>
+            </select>*/}
+
+
+                             <select
+    name="bloodGroup"
+    value={formData.bloodGroup}
+    onChange={(e) => {
+      const value = e.target.value;
+      if (value === "other") {
+        setFormData((prev) => ({ ...prev, bloodGroup: "other", customType: "" }));
+      } else {
+        setFormData((prev) => ({ ...prev, bloodGroup: value, customType: "" }));
+      }
+    }}
+    className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 focus:outline-none"
+    required
+  >
+    <option value="">Select Blood Group</option>
+    {types.map((t) => (
+      <option key={t} value={t}>
+        {t}
+      </option>
+    ))}
+    <option value="other">Add New</option>
+  </select>
+
+  {/* Show custom input if "Other" selected */}
+  {formData.bloodGroup === "other" && (
+    <input
+      type="text"
+      name="customType"
+      value={formData.customType || ""}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, customType: e.target.value }))
+      }
+      className="mt-2 w-full bg-transparent text-sm font-medium text-gray-900 dark:text-gray-100 focus:outline-none border-b border-gray-300 dark:border-gray-600"
+      placeholder="Enter new type"
+      required
+    />
+  )}
+
+
+
           </div>
         </div>
       </div>

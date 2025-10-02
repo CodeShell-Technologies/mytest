@@ -60,7 +60,8 @@ const Milestone = ({projectData}) => {
     status: "",
   });
   const permissions = useAuthStore((state) => state.permissions);
-  const userRole = permissions[0].role;
+  // const userRole = permissions[0].role;
+    const userRole=useAuthStore((state=>state.role))
   const branchCode = useBranchStore((state) => state.branchCodeOptions);
   const branchcodeForNor = useAuthStore((state) => state.branchcode);
   const branchCodeOptions =
@@ -300,56 +301,101 @@ console.log("RoleAccess:", roleAccess);
   };
 
   // --- Filtered & Sorted Data ---
-  const processedData = useMemo(() => {
-    if (!data) return [];
+  // const processedData = useMemo(() => {
+  //   if (!data) return [];
 
-    let filtered = data.filter((branch) =>
-      columns.every((col) => {
-        if (col.filterable === false || !columnFilters[col.key]) return true;
+  //   let filtered = data.filter((branch) =>
+  //     columns.every((col) => {
+  //       if (col.filterable === false || !columnFilters[col.key]) return true;
 
-        let value = branch[col.key];
+  //       let value = branch[col.key];
 
-        // Special handling for Milestone Status & Status badges
-        if (col.key === "isrevised") {
-          value = branch.isrevised ? "Revision" : "No Revision";
-        }
-        if (col.key === "status") {
-          value = branch.status;
-        }
+  //       // Special handling for Milestone Status & Status badges
+  //       if (col.key === "isrevised") {
+  //         value = branch.isrevised ? "Revision" : "No Revision";
+  //       }
+  //       if (col.key === "status") {
+  //         value = branch.status;
+  //       }
 
-        if (value === null || value === undefined) value = "";
+  //       if (value === null || value === undefined) value = "";
 
-        return value.toString().toLowerCase().includes(columnFilters[col.key].toLowerCase());
-      })
-    );
+  //       return value.toString().toLowerCase().includes(columnFilters[col.key].toLowerCase());
+  //     })
+  //   );
 
-    // Sort
-    if (sortConfig.key) {
-      filtered.sort((a, b) => {
-        let valA = a[sortConfig.key];
-        let valB = b[sortConfig.key];
+  //   // Sort
+  //   if (sortConfig.key) {
+  //     filtered.sort((a, b) => {
+  //       let valA = a[sortConfig.key];
+  //       let valB = b[sortConfig.key];
 
-        if (sortConfig.key === "isrevised") {
-          valA = a.isrevised ? "Revision" : "No Revision";
-          valB = b.isrevised ? "Revision" : "No Revision";
-        }
-        if (sortConfig.key === "status") {
-          valA = a.status;
-          valB = b.status;
-        }
+  //       if (sortConfig.key === "isrevised") {
+  //         valA = a.isrevised ? "Revision" : "No Revision";
+  //         valB = b.isrevised ? "Revision" : "No Revision";
+  //       }
+  //       if (sortConfig.key === "status") {
+  //         valA = a.status;
+  //         valB = b.status;
+  //       }
 
-        if (typeof valA === "number" && typeof valB === "number") {
-          return sortConfig.direction === "asc" ? valA - valB : valB - valA;
-        } else {
-          return sortConfig.direction === "asc"
-            ? valA.toString().localeCompare(valB.toString())
-            : valB.toString().localeCompare(valA.toString());
-        }
-      });
+  //       if (typeof valA === "number" && typeof valB === "number") {
+  //         return sortConfig.direction === "asc" ? valA - valB : valB - valA;
+  //       } else {
+  //         return sortConfig.direction === "asc"
+  //           ? valA.toString().localeCompare(valB.toString())
+  //           : valB.toString().localeCompare(valA.toString());
+  //       }
+  //     });
+  //   }
+
+  //   return filtered;
+  // }, [data, columnFilters, sortConfig]);
+
+
+const processedData = useMemo(() => {
+  if (!data) return [];
+
+let filtered = data.filter((branch) => {
+  // If user doesn't have full account access, filter out "advance it terms"
+  const isAccountUser = roleAccess?.accounts?.create &&
+                        roleAccess?.accounts?.edit &&
+                        roleAccess?.accounts?.view &&
+                        roleAccess?.accounts?.delete;
+
+  const isAdvanceMilestone =
+    branch?.miles_title?.toLowerCase().includes("advance") ||
+    branch?.milestone_type?.toLowerCase().includes("advance");
+
+  if (!isAccountUser && isAdvanceMilestone) {
+    return false;
+  }
+
+  // Then apply column filters
+  return columns.every((col) => {
+    if (col.filterable === false || !columnFilters[col.key]) return true;
+
+    let value = branch[col.key];
+
+    if (col.key === "isrevised") {
+      value = branch.isrevised ? "Revision" : "No Revision";
     }
 
-    return filtered;
-  }, [data, columnFilters, sortConfig]);
+    if (col.key === "status") {
+      value = branch.status;
+    }
+
+    if (value === null || value === undefined) value = "";
+
+    return value.toString().toLowerCase().includes(columnFilters[col.key].toLowerCase());
+  });
+});
+  return filtered;
+}, [data, columnFilters, sortConfig, roleAccess]);
+
+
+
+  
 
   // --- Render Table Head ---
   const thead = () =>
