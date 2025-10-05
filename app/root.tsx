@@ -7,8 +7,10 @@ import {
   ScrollRestoration,
 } from "react-router";
 import type { Route } from "./+types/root";
+import "../src/axios-setup";
 import { Routes, Route } from "react-router-dom"
 import "./app.css";
+
 import Login from "./routes/Login";
 import Dashboard from "./routes/home"
 import ProtectedRoute from "./ProtectedRoute";

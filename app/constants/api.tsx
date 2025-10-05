@@ -1,5 +1,6 @@
 // export const BASE_URL = "http://localhost:3000/api";
-export const BASE_URL = "https://almino-testing.onrender.com/api";
+// export const BASE_URL = "https://almino-testing.onrender.com/api";
+export const BASE_URL = "https://alminocrm.in/api";
 export const toastposition="bottom-right"
 export const toastStyle= {
           style: {

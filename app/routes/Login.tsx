@@ -4,6 +4,7 @@ import alminoBrand from "../../app/assets/Almino structural consultancy_Final.pn
 import { IoIosArrowRoundForward } from "react-icons/io";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import axios from "axios";
+import api from "src/api";
 import { BASE_URL } from "~/constants/api";
 import { useAuthStore } from "src/stores/authStore";
 import { useNavigate } from "react-router";
@@ -192,13 +193,19 @@ const handleSubmit = async (e: React.FormEvent) => {
   setIsLoading(true);
 
   try {
-    const response = await axios.post(
-      `${BASE_URL}/users/login`,
-      formData,
-      {
-        timeout: 15000, // 15 seconds timeout
-      }
-    );
+    // const response = await axios.post(
+    //   `${BASE_URL}/users/login`,
+    //   formData,
+    //   {
+    //     timeout: 15000, // 15 seconds timeout
+    //   }
+    // );
+
+
+     const response = await api.post(`users/login`,
+
+      formData
+      );
 
     if (response?.status === 201) {
       const userData = response.data.data[0];
